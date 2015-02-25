@@ -34,6 +34,20 @@ class Resources(object):
                 results[index].blit(sheet, (0, 0), cutout)
         return results
     def load_font(self, size):
-        fontpath = os.path.join(self.dir, "Code New Roman.otf")
+        fontpath = os.path.join(self.dir, "Code New Roman b.otf")
         return pygame.font.Font(fontpath, size)
+    def play_music(self, name):
+        """Generic function to play music in PyGame"""
+        class NoneSound:
+            def play(self): pass
+        if not pygame.mixer or not pygame.mixer.get_init():
+            return NoneSound()
+        fullname = os.path.join(self.dir, name)
+        try:
+            pygame.mixer.music.load(fullname)
+        except pygame.error:
+            print ('Cannot load music: %s' % fullname)
+            raise SystemExit(str(geterror()))
+        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.play(-1)
 res = Resources()

@@ -5,8 +5,8 @@ def outlined_text(text, color, bordercolor):
     notcolor = [c^0xFF for c in bordercolor]
     font = res.load_font(16)
     base = font.render(text, 0, bordercolor, notcolor)
-    size = base.get_width() + 2, base.get_height() + 2
-    image = pygame.Surface(size, 16)
+    size = base.get_width()+2, base.get_height()+2
+    image = pygame.Surface(size)
     image.fill(notcolor)
     base.set_colorkey(0)
     image.blit(base, (0, 0))
@@ -26,8 +26,5 @@ class Frame(pygame.sprite.Sprite):
         self.image = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         self.image.fill(color)
 
-class Message(Frame):
-    def __init__(self, rect, lines, fontsize):
-        self.lines = lines
-        rect = pygame.Rect(rect)
-        rect.height = max(len(lines)*fontsize, rect.height)
+#class Button(Frame):
+#    def __init__(self, rect, 
