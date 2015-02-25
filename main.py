@@ -1,17 +1,24 @@
 import pygame
 import title
-from resources import res
 
-MODE = 640, 480
-
-pygame.display.init()
-pygame.mixer.pre_init(buffer=512)
-try:
-    pygame.mixer.init()
-except Exception:
-    pass
-
-pygame.display.set_mode(MODE, pygame.RESIZABLE)
-pygame.display.set_caption('Arad Tactics')
-pygame.display.set_icon(res.load_image('icon.png'))
-title.Title().run()
+class Main(object):
+    def __init__(self):
+        self.screen = pygame.display.get_surface()
+        self.canvas = pygame.Surface((640, 480))
+        self.clock = pygame.time.Clock()
+        self.routine = title.Title(self)
+        self.quit = False
+    def draw(self):
+        self.canvas = pygame.transform.smoothscale(self.canvas,
+            (pygame.display.get_surface().get_width(),
+            pygame.display.get_surface().get_height()))
+        self.screen.blit(self.canvas, (0,0))
+        self.canvas = pygame.Surface((640, 480))
+        pygame.display.flip()
+    def run(self):
+        while True:
+            if self.quit == True:
+                return
+            self.routine.run()
+            self.draw()
+            self.clock.tick(30)
