@@ -1,3 +1,9 @@
 I have buttons for:
 
 Queueing skills (easily called by passing the skill instance)
+
+Slayer gains 1 Drive every time he takes damage.
+Fighter gains 1 Drive every time she deals damage.
+Gunner gains 1 Drive every time he combos into an attack.
+Mage gains 2 Drive every turn she stays stationary.
+Priest gains 2 Drive per turn for each ally that takes damage.

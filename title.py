@@ -10,10 +10,10 @@ class Title(object):
         self.ui = pygame.sprite.LayeredUpdates()
         self.selection = 'root'
         res.play_music('characterSelectStage.ogg')
-        self.splash = str(random.randrange(5))
+        self.splash = res.load_image('illust'+str(random.randrange(5))+'.png')
     def draw(self):
         self.main.canvas.blit(res.load_image('0.png'), (0,0))
-        self.main.canvas.blit(res.load_image('illust'+self.splash+'.png'), (0,0))
+        self.main.canvas.blit(self.splash, (0,480-self.splash.get_height()))
         self.ui.draw(self.main.canvas)
     def event_handler(self):
         for event in pygame.event.get():

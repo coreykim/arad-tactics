@@ -70,7 +70,7 @@ class TextSelection(Frame):
         super(TextSelection, self).__init__(rect)
     def render(self):
         if self.active:
-            self.image = outlined_text(self.option[1], color=(230,230,100))
+            self.image = outlined_text(self.option[1], color=(240,220,120))
         else:
             self.image = outlined_text(self.option[1])
     def mousebuttondown(self, caller):
