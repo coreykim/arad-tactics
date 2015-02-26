@@ -1,11 +1,13 @@
 import pygame
 import title
+import avatar
 
 class Main(object):
     def __init__(self):
         self.screen = pygame.display.get_surface()
         self.canvas = pygame.Surface((640, 480))
         self.clock = pygame.time.Clock()
+        self.data = None
         self.routine = title.Title(self)
         self.quit = False
     def draw(self):

@@ -1,4 +1,5 @@
 import os, pygame
+from pygame.locals import SRCALPHA
 
 class Resources(object):
     def __init__(self):
@@ -18,19 +19,19 @@ class Resources(object):
             print 'Cannot load image:', name
             raise SystemExit, message
         return image
-    def unpack_sheet(self, name):
+    def unpack_sheet(self, name, ignore=0):
         results = []
         sheet = self.load_image(name+'.png')
         with open(os.path.join(self.dir, name+'.txt'), 'r') as sheet_map:
             for i, line in enumerate(sheet_map):
-                index=(int(line.split()[0]))
+                index=(int(line.split()[0][ignore::]))
                 x_start=(int(line.split()[2]))
                 y_start=(int(line.split()[3]))
                 x_size=(int(line.split()[4]))
                 y_size=(int(line.split()[5]))
-                results.append(pygame.Surface((x_size, y_size), flags=SRCALPHA))
-            for i, line in enumerate(sheet_map):
                 cutout = (x_start, y_start, x_size, y_size)
+                while len(results)<index+1:
+                    results.append(pygame.Surface((x_size, y_size), flags=SRCALPHA))
                 results[index].blit(sheet, (0, 0), cutout)
         return results
     def load_font(self, size):

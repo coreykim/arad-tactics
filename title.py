@@ -39,7 +39,7 @@ class Title(object):
                 ]
             self.selection = ' '
             for i in range(len(root)):
-                self.ui.add(TitleSelection(450, 80+50*i, root[i]))
+                self.ui.add(ui.TextSelection(450, 80+50*i, root[i]))
         elif self.selection== 'options':
             self.ui.empty()
             options = [
@@ -51,24 +51,10 @@ class Title(object):
                 ]
             self.selection = ' '
             for i in range(len(options)):
-                self.ui.add(TitleSelection(450, 80+50*i, options[i]))
+                self.ui.add(ui.TextSelection(450, 80+50*i, options[i]))
         elif len(self.selection)==2:
             pygame.display.set_mode(self.selection, pygame.RESIZABLE)
             self.selection = 'options'
         elif self.selection== 'start':
             self.main.routine = manage.Manage(self.main)
         self.draw()
-
-class TitleSelection(ui.Clicky):
-    def __init__(self, x, y, option):
-        self.option = option
-        rect = ui.outlined_text(self.option[1]).get_rect()
-        rect = rect.move(x, y)
-        super(TitleSelection, self).__init__(rect)
-    def render(self):
-        if self.active:
-            self.image = ui.outlined_text(self.option[1], color=(230,230,100))
-        else:
-            self.image = ui.outlined_text(self.option[1])
-    def mousebuttondown(self, caller):
-        caller.selection = self.option[0]

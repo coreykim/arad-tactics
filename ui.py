@@ -20,7 +20,7 @@ def outlined_text(text, color=(255,255,255), bordercolor=(1,1,1)):
     return image
 
 class Frame(pygame.sprite.Sprite):
-    '''Static sprites that never change'''
+    '''A barebones UI element that detects inputs'''
     def __init__(self, rect, color=None):
         super(Frame, self).__init__()
         self.rect = pygame.Rect(rect)
@@ -31,15 +31,6 @@ class Frame(pygame.sprite.Sprite):
         self.image = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         if self.color:
             self.image.fill(self.color)
-    def input(self, event):
-        pass
-
-class Clicky(Frame):
-    '''An area that can be clicked and changes appearance on mouseover'''
-    def __init__(self, rect, color=None, activecolor=None):
-        super(Clicky, self).__init__(rect, color=color)
-        self.activecolor = activecolor
-        self.layer = 100
     def input(self, event, caller):
         pos = pygame.mouse.get_pos()
         pos = (pos[0]*640/pygame.display.get_surface().get_width(),
@@ -61,3 +52,26 @@ class Clicky(Frame):
         pass
     def mousebuttonup(self, caller):
         pass
+
+class TextLine(Frame):
+    def __init__(self, x, y, text):
+        self.text = text
+        rect = outlined_text(self.text).get_rect()
+        rect = rect.move(x, y)
+        super(TextLine, self).__init__(rect)
+    def render(self):
+        self.image = outlined_text(self.text)
+
+class TextSelection(Frame):
+    def __init__(self, x, y, option):
+        self.option = option
+        rect = outlined_text(self.option[1]).get_rect()
+        rect = rect.move(x, y)
+        super(TextSelection, self).__init__(rect)
+    def render(self):
+        if self.active:
+            self.image = outlined_text(self.option[1], color=(230,230,100))
+        else:
+            self.image = outlined_text(self.option[1])
+    def mousebuttondown(self, caller):
+        caller.selection = self.option[0]
