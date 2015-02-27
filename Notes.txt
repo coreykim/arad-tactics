@@ -8,6 +8,4 @@ Gunner gains 1 Drive every time he combos into an attack.
 Mage gains 2 Drive every turn she stays stationary.
 Priest gains 2 Drive per turn for each ally that takes damage.
 
-Randomized stages
-Grids are always the same size
-
+rect is used for detecting inputs, positioning blit

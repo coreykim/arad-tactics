@@ -49,7 +49,7 @@ class Title(object):
             self.ui.empty()
             self.ui.add(self.splash)
             options = [
-                ((640,480), '640x480 (default)'),
+                ((640,480), '640x480'),
                 ((800,600), '800x600'),
                 ((960,720), '960x720'),
                 ((1280,960), '1280x960'),
@@ -60,6 +60,10 @@ class Title(object):
                 self.ui.add(ui.TextSelection(450, 80+50*i, options[i]))
         elif len(self.selection)==2:
             pygame.display.set_mode(self.selection, pygame.RESIZABLE)
+            if self.selection[0]*9 == self.selection[1]*16:
+                self.main.ratio = (16, 9)
+            else:
+                self.main.ratio = (16, 12)
             self.selection = 'options'
         elif self.selection== 'start':
             self.ui.empty()

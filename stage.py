@@ -23,7 +23,7 @@ class Stage(pygame.sprite.Sprite):
     def __init__(self):
         self.render()
     def render(self):
-        self.image = pygame.Surface((1280, 960))
+        self.image = pygame.Surface((1920, 960))
         for element in self.elements:
             for x in range(element.repeat[0]):
                     for y in range(element.repeat[1]):
@@ -70,13 +70,13 @@ class Castle(Stage):
         self.render()
 class Sewer(Stage):
     def __init__(self):
-        anim01 = StageElement('stages/Sewer/dcfarstreamani.img/0.png', pos=(0, -3), duration=3)
+        anim01 = StageElement('stages/Sewer/dcfarstreamani.img/0.png', pos=(0, 72), duration=3, repeat=(3,1), spacing=(320,1))
         anim01.add_frame('stages/Sewer/dcfarstreamani.img/1.png', duration=3)
         anim01.add_frame('stages/Sewer/dcfarstreamani.img/2.png', duration=3)
         anim01.add_frame('stages/Sewer/dcfarstreamani.img/3.png', duration=3)
         anim01.add_frame('stages/Sewer/dcfarstreamani.img/4.png', duration=3)
-        self.elements = ([StageElement('stages/Sewer/dcfar.img/0.png', pos=(0, -75))] +
+        self.elements = ([StageElement('stages/Sewer/dcfar.img/0.png', pos=(0, 0), repeat=(3,1), spacing=(320,1))] +
                         [anim01] +
-                        [StageElement('stages/Sewer/tileb.img/0.png', pos=(0, 80), spacing=(112, 97), repeat=(3,1))]
+                        [StageElement('stages/Sewer/tileb.img/0.png', pos=(0, 155), spacing=(112, 97), repeat=(9,1))]
                         )
         self.render()
