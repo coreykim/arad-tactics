@@ -53,25 +53,33 @@ class Frame(pygame.sprite.Sprite):
     def mousebuttonup(self, caller):
         pass
 
+class Image(Frame):
+    def __init__(self, x, y, file):
+        self.image = res.load_image(file)
+        rect = self.image.get_rect().move(x, y)
+        super(Image, self).__init__(rect)
+    def render(self):
+        pass
+
 class TextLine(Frame):
     def __init__(self, x, y, text):
         self.text = text
-        rect = outlined_text(self.text).get_rect()
-        rect = rect.move(x, y)
+        rect = outlined_text(self.text).get_rect().move(x, y)
         super(TextLine, self).__init__(rect)
     def render(self):
         self.image = outlined_text(self.text)
 
 class TextSelection(Frame):
     def __init__(self, x, y, option):
-        self.option = option
-        rect = outlined_text(self.option[1]).get_rect()
+        self.selection = option[0]
+        self.text = '< '+option[1]+' >'
+        rect = outlined_text(self.text).get_rect()
         rect = rect.move(x, y)
         super(TextSelection, self).__init__(rect)
     def render(self):
         if self.active:
-            self.image = outlined_text(self.option[1], color=(240,220,120))
+            self.image = outlined_text(self.text, color=(240,220,120))
         else:
-            self.image = outlined_text(self.option[1])
+            self.image = outlined_text(self.text)
     def mousebuttondown(self, caller):
-        caller.selection = self.option[0]
+        caller.selection = self.selection

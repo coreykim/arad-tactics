@@ -2,53 +2,33 @@ import pygame
 from resources import res
 import ui
 import avatar
-
-class CharacterSelect(ui.Frame):
-    def __init__(self, avatar, character_name, i):
-        self.avatar = avatar
-        self.name = character_name
-        rect = (170+200*i, 100, 100, 150)
-        super(CharacterSelect, self).__init__(rect)
-    def render(self):
-        self.image = pygame.Surface(self.rect.size, pygame.SRCALPHA)
-        if self.active:
-            self.highlight = pygame.Surface(self.rect.size)
-            self.highlight.fill((240,220,120))
-            self.highlight.set_alpha(50)
-            self.image.blit(self.highlight, (0,0))
-            text = ui.outlined_text(self.name, (240,220,120))
-            self.image.blit(text, (int(self.rect.width/2-text.get_width()/2),
-                            self.avatar.height+5))
-        else:
-            text = ui.outlined_text(self.name)
-            self.image.blit(text, (int(self.rect.width/2-text.get_width()/2),
-                            self.avatar.height+5))
-        self.image.blit(self.avatar.image, (int(self.rect.width/2)
-            - self.avatar.center[0], self.avatar.height-self.avatar.center[1]))
-    def update(self):
-        self.avatar.update()
-        self.render()
+import title
+import battle
 
 class Manage(object):
     def __init__(self, main):
         self.main = main
+        pygame.mixer.music.fadeout(1000)
+        self.selection = ' '
+        self.party_index = 0
         self.ui = pygame.sprite.LayeredUpdates()
-        if not self.main.data:
-            self.selection = None
-            elements = [ui.TextLine(0, 30, 'Select a class:')]
-            for element in elements:
-                element.rect = element.rect.move(
-                        320-int(element.rect.width/2), 0)
-                self.ui.add(element)
-            choices = [
-                (avatar.Slayer(), 'Slayer'),
-                (avatar.Fighter(), 'Fighter')
-                ]
-            for i, choice in enumerate(choices):
-                element = CharacterSelect(choice[0], choice[1], i)
-                self.ui.add(element)
+        self.ui.add(ui.Frame((50, 20, 640-50, 480-20), color=(20,20,20)))
+        self.ui.add(ui.Frame((0, 20, 50, 50), color=(20,20,20)))
+        char = self.main.data[self.party_index]
+        align = (120, 50)
+        self.ui.add(ui.TextLine(align[0], align[1], char.name))
+        self.ui.add(ui.TextLine(align[0], align[1]+20, 'HP: {}/{}'.format(
+            char.hp, char.max_hp)))
+        self.ui.add(ui.TextLine(align[0], align[1]+35, 'Resilience: {}'.format(
+            char.basestat.resilience)))
+        self.ui.add(ui.TextLine(align[0], align[1]+50, 'Power: {}'.format(
+            char.basestat.power)))
+        self.ui.add(ui.TextLine(align[0], align[1]+65, 'Speed: {}'.format(
+            char.basestat.speed)))
+        self.ui.add(CharacterPreview(char.avatar))
+        self.ui.add(ui.TextSelection(0, 0, ('next', 'Next')))
     def draw(self):
-        self.main.canvas.blit(res.load_image('0.png'), (0,0))
+        self.main.canvas.fill((80, 80, 80))
         self.ui.update()
         self.ui.draw(self.main.canvas)
     def event_handler(self):
@@ -60,9 +40,20 @@ class Manage(object):
             for sprite in self.ui.sprites():
                 sprite.input(event, self)
     def run(self):
-        if not self.main.data:
-            self.new_game = True
-        else:
-            self.new_game = False
         self.event_handler()
         self.draw()
+        if self.selection=='next':
+            self.main.routine = battle.Battle(self.main)
+
+class CharacterPreview(ui.Frame):
+    def __init__(self, avatar):
+        self.avatar = avatar
+        rect = (400, 30, 100, 140)
+        super(CharacterPreview, self).__init__(rect)
+    def render(self):
+        self.image = pygame.Surface(self.rect.size, pygame.SRCALPHA)
+        self.image.blit(self.avatar.image, (int(self.rect.width/2)
+            - self.avatar.center[0], self.avatar.height-self.avatar.center[1]))
+    def update(self):
+        self.avatar.update()
+        self.render()

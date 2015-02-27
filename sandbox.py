@@ -1,2 +1,5 @@
 a = range(6)
-print a[1:]
+b = range(3)
+a = set(a)
+b = set(b)
+print len(a.union(b))

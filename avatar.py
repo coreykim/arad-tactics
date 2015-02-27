@@ -46,23 +46,24 @@ class Avatar(pygame.sprite.Sprite):
             sprite_part = res.unpack_sheet(part)
             for i in range(len(sprite_part)):
                 built[i].blit(sprite_part[i], (0,0))
+                built[i] = built[i].convert_alpha()
         return built
 
 class Slayer(Avatar):
     def __init__(self):
         super(Slayer, self).__init__(['default_slayer'])
-        self.idle = Animation(frames = range(91, 96), speed=0.18)
+        self.idle = Animation(frames = range(91, 96), speed=0.15)
         self.attack1 = Animation(frames = range(0, 10), speed=0.4)
         self.cast1 = Animation(frames = range(75, 90), speed=0.4)
         self.hit1 = Animation(frames = range(96, 99), speed=0.12)
         self.play_animation(self.idle)
         self.height = 120
-        self.center = (116, 174)
+        self.center = (116, 170)
 
 class Fighter(Avatar):
     def __init__(self):
         super(Fighter, self).__init__(['default_fighter'])
-        self.idle = Animation(frames = range(132, 136), speed=0.18)
+        self.idle = Animation(frames = range(132, 136), speed=0.15)
         self.attack1 = Animation(frames = range(30, 37), speed=0.4)
         self.attack2 = Animation(frames = range(65, 71), speed=0.4)
         self.cast1 = Animation(frames = range(92, 95), speed=0.4)
