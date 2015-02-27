@@ -30,7 +30,7 @@ class CharacterFlags(object):
 
 class Character(object):
     """Needs map, map-related globals, PyGame for sprites"""
-    def __init__(self, name, job="monster", avatar=None, basestat=None, hero=False, ai=None):
+    def __init__(self, name, job="monster", avatar=None, basestat=None, player=False, ai=None):
         self.name = name
         self.job = job
         self.avatar = avatar
@@ -38,7 +38,7 @@ class Character(object):
             self.avatar.owner = self
         self.basestat = basestat
         self.load_stats()
-        self.hero = hero
+        self.player = player
         self.ai = ai
         self.direction = None
         if self.ai:
@@ -61,12 +61,11 @@ class Character(object):
             self.drive = 0
     def enter_field(self, x, y, direction=None):
         if not direction:
-            if self.hero:
+            if self.player:
                 self.direction = 1
             else:
                 self.direction = -1
-        map[x][y].occupant = self #???
-        pass
+        self.x, self.y = x, y
     def learn_skill(self, SkillClass):
         skill = SkillClass()
         skill.owner = self

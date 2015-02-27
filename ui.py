@@ -26,6 +26,7 @@ class Frame(pygame.sprite.Sprite):
         self.rect = pygame.Rect(rect)
         self.color = color
         self.active = False
+        self.held = False
         self.render()
     def render(self):
         self.image = pygame.Surface(self.rect.size, pygame.SRCALPHA)
@@ -37,20 +38,21 @@ class Frame(pygame.sprite.Sprite):
                 pos[1]*480/pygame.display.get_surface().get_height())
         if self.rect.collidepoint(pos):
             if event.type==pygame.MOUSEMOTION:
-                self.mousemotion(caller)
+                self.mousemotion(caller, event)
             elif event.type==pygame.MOUSEBUTTONDOWN:
-                self.mousebuttondown(caller)
+                self.mousebuttondown(caller, event)
             elif event.type==pygame.MOUSEBUTTONUP:
-                self.mousebuttonup(caller)
+                self.mousebuttonup(caller, event)
         else:
             self.active = False
+            self.held = False
             self.render()
-    def mousemotion(self, caller):
+    def mousemotion(self, caller, event):
         self.active = True
         self.render()
-    def mousebuttondown(self, caller):
+    def mousebuttondown(self, caller, event):
         pass
-    def mousebuttonup(self, caller):
+    def mousebuttonup(self, caller, event):
         pass
 
 class Image(Frame):
@@ -81,5 +83,6 @@ class TextSelection(Frame):
             self.image = outlined_text(self.text, color=(240,220,120))
         else:
             self.image = outlined_text(self.text)
-    def mousebuttondown(self, caller):
-        caller.selection = self.selection
+    def mousebuttondown(self, caller, event):
+        if event.button==1:
+            caller.selection = self.selection
