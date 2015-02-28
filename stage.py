@@ -6,7 +6,6 @@ class StageElement(object):
     def __init__(self, image, duration=1, pos=(0,0), spacing=(50,50)):
         self.pos = pos
         self.spacing = spacing
-        self.repeat = repeat
         self.frames = []
         self.add_frame(image, duration=duration)
         self.frame_index = 0
@@ -24,10 +23,8 @@ class Stage(pygame.sprite.Sprite):
     def render(self):
         self.image = pygame.Surface((1920, 960))
         for element in self.elements:
-            for x in range(element.repeat[0]):
-                    for y in range(element.repeat[1]):
-                        pos = ((element.pos[0] + x*element.spacing[0])*2, (element.pos[1] + y*element.spacing[1])*2)
-                        self.image.blit(element.frames[element.frame_index], pos)
+            pos = ((element.pos[0])*2, (element.pos[1])*2)
+            self.image.blit(element.frames[element.frame_index], pos)
     def update(self):
         for element in self.elements:
             element.animate()
@@ -57,7 +54,7 @@ class Temple(Stage):
     def __init__(self):
         self.elements = ([StageElement('stages/Temple/aganzo.img/0.png', pos=(112, -75),
                             spacing=(112, 240))] +
-                        [StageElement('stages/Temple/aganzo.img/1.png', pos=(0, -75)]
+                        [StageElement('stages/Temple/aganzo.img/1.png', pos=(0, -75))]
                         )
 class Castle(Stage):
     def __init__(self):
