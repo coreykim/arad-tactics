@@ -17,8 +17,9 @@ class Battle(object):
         self.phase = 'action'
         self.player_turn = True
         self.turn_indicator = TurnIndicator()
-        self.field = Field(0, self.turn_indicator.rect.height, 10, 5, stage.Sewer())
-        self.ui.add(self.field, self.turn_indicator)
+        self.field = Field(0, self.turn_indicator.rect.height,
+                            10, 5, stage.Sewer())
+        self.ui.add(self.turn_indicator, self.field)
         self.main.data[0].enter_field(0, 0, self.field)
     def draw(self):
         self.main.canvas.fill((20, 20, 20))

@@ -47,6 +47,8 @@ class Frame(pygame.sprite.Sprite):
         pass
     def mousebuttonup(self, caller, event):
         pass
+    def lose_focus(self):
+        self.render()
 
 class Image(Frame):
     def __init__(self, x, y, file):
