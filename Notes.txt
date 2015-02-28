@@ -1,30 +1,11 @@
+I have buttons for:
 
-Blit only the animated parts of the background
+Queueing skills (easily called by passing the skill instance)
 
+Slayer gains 1 Drive every time he takes damage.
+Fighter gains 1 Drive every time she deals damage.
+Gunner gains 1 Drive every time he combos into an attack.
+Mage gains 2 Drive every turn she stays stationary.
+Priest gains 2 Drive per turn for each ally that takes damage.
 
-
-camera.rect = field.rect.copy()
-image -> canvas -> smoothscale(canvas.width/camera.width*field.width, canvas.height/camera.width*field.width) -> field
-when zooming: increase camera.width
-when scrolling +: decrease camera.left but stop at 0
-when scrolling -: increase camera.left but stop at canvas.width-camera.width
-
-copy is considerably faster than blitting onto a new image
-
-1. On init, blit and load every stage element into one image for each frame, because we need to do that before scaling.  Accept a number, either number of grids or number of pixels, to know how long to generate the stage, so we don't generate a longer stage than we need
-3. Get a camera-scaled stage as a new Surface
-4. Get another new Surface with flag=pygame.SRCALPHA
-5. Put gridlines, characters, and effects onto a blank, camera-clipped canvas
-
-if we're shrinking, we want to shrink before blit
-if we're clipping, we want to clip before blit
-
-We want to shrink, THEN clip
-
-1. On init, blit and load every stage element into one image per frame, taking a number from the Field object to know how long to generate the stage, in order not to generate a stage whose space we can never use
-2. Get a camera-scaled copy of the stage
-3. Set the clipping area of that stage based on camera
-4. Blit a camera-scaled copy of gridlines onto clipped, camera-scaled stage
-5. Blit a camera-scaled copy of characters/effects onto clipped, camera-scaled stage
-6. Blit the clipping area from the camera-scaled stage with all the stuff on it onto self.image
-7. Profit!
+rect is used for detecting inputs, positioning blit

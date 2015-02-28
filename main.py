@@ -22,9 +22,9 @@ class Main(object):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.quit = True
-            elif event.type == pygame.VIDEORESIZE:
+            if event.type == pygame.VIDEORESIZE:
                 self.screen=pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
-            elif event.type in [pygame.MOUSEMOTION, pygame.MOUSEBUTTONUP,
+            if event.type in [pygame.MOUSEMOTION, pygame.MOUSEBUTTONUP,
                                 pygame.MOUSEBUTTONDOWN]:
                 pos = event.pos
                 pos = (pos[0]*640/pygame.display.get_surface().get_width(),
@@ -35,7 +35,7 @@ class Main(object):
                     elif sprite.active:
                         sprite.active = False
                         sprite.held = False
-                        sprite.lose_focus()
+                        sprite.render()
     def run(self):
         while True:
             if self.quit == True:
@@ -43,4 +43,5 @@ class Main(object):
             self.event_handler()
             self.routine.run()
             self.draw()
-            self.clock.tick(120)
+            self.clock.tick(60)
+            print self.clock.get_fps()

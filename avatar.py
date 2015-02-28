@@ -37,7 +37,6 @@ class Avatar(pygame.sprite.Sprite):
             self.image = self.images[self.animation.frames[int(self.frame_count)]]
     def build_sprite(self, parts, pos_dict=None):
         built = []
-        print pygame.time.get_ticks()
         with open(os.path.join(res.dir, parts[0]+'.txt'), 'r') as sheet_map:
             #Assumes that the first part has a line for every frame
             for line in sheet_map:
@@ -48,7 +47,6 @@ class Avatar(pygame.sprite.Sprite):
             for i in range(len(sprite_part)):
                 built[i].blit(sprite_part[i], (0,0))
                 built[i] = built[i].convert_alpha()
-        print pygame.time.get_ticks()
         return built
 
 class Slayer(Avatar):

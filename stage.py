@@ -3,7 +3,8 @@ from resources import res
 
 class StageElement(object):
     '''A piece of the stage on which the battle takes place.'''
-    def __init__(self, image, duration=1, pos=(0,0), spacing=(50,50)):
+    def __init__(self, image, duration=1, pos=(0,0), spacing=(1,1),
+                repeat= (1,1)):
         self.pos = pos
         self.spacing = spacing
         self.repeat = repeat
@@ -39,7 +40,7 @@ class PineForest(Stage):
                         [StageElement('stages/PineForest/02far0.img/0.png', pos=(0, -75))] +
                         [StageElement('stages/PineForest/02mid0.img/0.png', pos=(0, -75))] +
                         [StageElement('stages/PineForest/02tile00.img/0.png', pos=(0, 85),
-                            spacing=(112, 240))] +
+                            spacing=(112, 240), repeat=(5, 1))] +
                         [StageElement('stages/PineForest/02obj001.img/0.png', pos=(75, 65))]
                         )
         self.render()
@@ -49,38 +50,33 @@ class FrostForest(Stage):
         self.elements = ([StageElement('stages/PineForest/02far0f.img/0.png', pos=(0, -75))] +
                         [StageElement('stages/PineForest/02mid0f.img/0.png', pos=(0, -75))] +
                         [StageElement('stages/PineForest/02tile00f.img/0.png', pos=(0, 85),
-                            spacing=(112, 240))] +
+                            spacing=(112, 240), repeat=(5, 1))] +
                         [StageElement('stages/PineForest/02obj001f.img/0.png', pos=(75, 65))]
                         )
         self.render()
 class Temple(Stage):
     def __init__(self):
         self.elements = ([StageElement('stages/Temple/aganzo.img/0.png', pos=(112, -75),
-                            spacing=(112, 240))] +
-                        [StageElement('stages/Temple/aganzo.img/1.png', pos=(0, -75)]
+                            spacing=(112, 240), repeat=(4,1), flip=True)] +
+                        [StageElement('stages/Temple/aganzo.img/1.png', pos=(0, -75), flip=True)]
                         )
 class Castle(Stage):
     def __init__(self):
         self.elements = ([StageElement('stages/Castle/far_dr.img/0.png', pos=(0, -105))] +
                         [StageElement('stages/Castle/200tile0.img/0.png', pos=(0, -105),
-                            spacing=(112, 240))] +
+                            spacing=(112, 240), repeat=(2,1))] +
                         [StageElement('stages/Castle/200tile0.img/4.png', pos=(224, -105))]
                         )
         self.render()
-
-class Blank(Stage):
-    def __init__(self):
-        self.elements = ([StageElement('blank.png', pos=(0, 0))])
-
 class Sewer(Stage):
     def __init__(self):
-        anim01 = StageElement('stages/Sewer/dcfarstreamani.img/0.png', pos=(0, 72), duration=3, spacing=(320,1))
+        anim01 = StageElement('stages/Sewer/dcfarstreamani.img/0.png', pos=(0, 72), duration=3, repeat=(3,1), spacing=(320,1))
         anim01.add_frame('stages/Sewer/dcfarstreamani.img/1.png', duration=3)
         anim01.add_frame('stages/Sewer/dcfarstreamani.img/2.png', duration=3)
         anim01.add_frame('stages/Sewer/dcfarstreamani.img/3.png', duration=3)
         anim01.add_frame('stages/Sewer/dcfarstreamani.img/4.png', duration=3)
-        self.elements = ([StageElement('stages/Sewer/dcfar.img/0.png', pos=(0, 0), spacing=(320,1))] +
+        self.elements = ([StageElement('stages/Sewer/dcfar.img/0.png', pos=(0, 0), repeat=(3,1), spacing=(320,1))] +
                         [anim01] +
-                        [StageElement('stages/Sewer/tileb.img/0.png', pos=(0, 155), spacing=(112, 97))]
+                        [StageElement('stages/Sewer/tileb.img/0.png', pos=(0, 155), spacing=(112, 97), repeat=(9,1))]
                         )
         self.render()
