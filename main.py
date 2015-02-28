@@ -18,10 +18,30 @@ class Main(object):
         self.screen.blit(self.canvas, (0,0))
         self.canvas = pygame.Surface((self.ratio[0]*40, self.ratio[1]*40))
         pygame.display.flip()
+    def event_handler(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.quit = True
+            if event.type == pygame.VIDEORESIZE:
+                self.screen=pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
+            if event.type in [pygame.MOUSEMOTION, pygame.MOUSEBUTTONUP,
+                                pygame.MOUSEBUTTONDOWN]:
+                pos = event.pos
+                pos = (pos[0]*640/pygame.display.get_surface().get_width(),
+                        pos[1]*480/pygame.display.get_surface().get_height())
+                for sprite in self.routine.ui.sprites():
+                    if sprite.rect.collidepoint(pos):
+                        sprite.input(event, self.routine)
+                    elif sprite.active:
+                        sprite.active = False
+                        sprite.held = False
+                        sprite.render()
     def run(self):
         while True:
             if self.quit == True:
                 return
+            self.event_handler()
             self.routine.run()
             self.draw()
-            self.clock.tick(30)
+            self.clock.tick(60)
+            print self.clock.get_fps()

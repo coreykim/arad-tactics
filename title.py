@@ -14,22 +14,13 @@ class Title(object):
         res.play_music('characterSelectStage.ogg')
         self.splash = ui.Image(0, 0, 'illust'+str(random.randrange(5))+'.png')
         self.splash.rect = self.splash.rect.move(0, 480-self.splash.rect.height)
+        self.background = res.load_image('0.png')
         self.ui.add(self.splash)
     def draw(self):
-        self.main.canvas.blit(res.load_image('0.png'), (0,0))
+        self.main.canvas.blit(self.background, (0,0))
         self.ui.draw(self.main.canvas)
         self.ui.update()
-    def event_handler(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.main.quit = True
-            if event.type == pygame.VIDEORESIZE:
-                self.main.screen=pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
-            for sprite in self.ui.sprites():
-                sprite.input(event, self)
     def run(self):
-        self.event_handler()
-        #Initial draw of title screen
         if self.selection=='exit':
             self.main.quit = True
             return

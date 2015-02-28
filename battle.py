@@ -1,3 +1,4 @@
+from __future__ import division
 import pygame
 from resources import res
 import ui
@@ -12,27 +13,47 @@ class Battle(object):
         res.play_music('underfoot.ogg')
         self.ui = pygame.sprite.LayeredUpdates()
         self.turn = 0
+        self.selection = ' '
         self.phase = 'action'
         self.player_turn = True
-        self.field = Field(10, 5, stage.Sewer())
-        self.ui.add(self.field)
-        self.field.place_character(self.main.data[0], 0, 0)
+        self.turn_indicator = TurnIndicator()
+        self.field = Field(0, self.turn_indicator.rect.height, 10, 5, stage.Sewer())
+        self.ui.add(self.field, self.turn_indicator)
+        self.main.data[0].enter_field(0, 0, self.field)
     def draw(self):
-        self.main.canvas.fill((80, 80, 255))
+        self.main.canvas.fill((20, 20, 20))
         self.ui.update()
         self.ui.draw(self.main.canvas)
-    def event_handler(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.main.quit = True
-            if event.type == pygame.VIDEORESIZE:
-                self.main.screen=pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
-            for sprite in self.ui.sprites():
-                sprite.input(event, self)
     def run(self):
-        self.event_handler()
+        if self.selection == 'turn':
+            self.turn += 1
+            self.selection = ' '
         self.draw()
 
+class TurnIndicator(ui.Frame):
+    def __init__(self):
+        frames = ['player_action.png', 'enemy_reaction.png',
+                    'enemy_action.png', 'player_reaction.png']
+        self.frame = []
+        for frame in frames:
+            self.frame.append(res.load_image(frame))
+        self.graphic = self.frame[0]
+        self.rect = pygame.Rect(320-int(self.graphic.get_width()/2),
+                0, self.graphic.get_width(), self.graphic.get_height())
+
+        super(TurnIndicator, self).__init__(self.rect)
+        self.selection = 'turn'
+    def render(self):
+        self.image = pygame.Surface((self.rect.width, self.rect.height),
+                                    flags=pygame.SRCALPHA)
+        if self.active:
+            self.image.fill(self.highlightcolor)
+        self.image.blit(self.graphic, (0, 0))
+    def mousebuttondown(self, caller, event):
+        if event.button==1:
+            caller.selection = self.selection
+            self.graphic = self.frame[(caller.turn+1)%4]
+            self.render()
 class Tile(object):
     def __init__(self):
         self.occupant = []
@@ -44,12 +65,12 @@ class Field(ui.Frame):
     grid_height = 30
     grid_tilt = 35
     horizon = 350
-    def __init__(self, columns, rows, background):
+    def __init__(self, x, y, columns, rows, background):
         self.zoom = 1
         self.columns = columns
         self.rows = rows
-        self.rect = pygame.Rect(0, 24, 640, 360)
-        self.canvas_rect = pygame.Rect(0, 0,
+        self.rect = pygame.Rect(x, y, 640, 360)
+        self.canvas_rect = pygame.Rect(-self.grid_tilt, 0,
                 self.grid_width*columns+self.grid_tilt*rows,
                 self.grid_height*rows+self.horizon+4)
         self.tiles = [[Tile()
@@ -64,12 +85,12 @@ class Field(ui.Frame):
         if event.button==1:
             self.held = True
         if event.button==4:
-            self.zoom = max(self.zoom-0.2, 0.6)
+            self.zoom = max(self.zoom-0.25, 0.5)
     def mousebuttonup(self, caller, event):
         if event.button==1:
             self.held = False
         if event.button==5:
-            self.zoom = min(self.zoom+0.2, 1.4)
+            self.zoom = min(self.zoom+0.25, 1)
     def mousemotion(self, caller, event):
         self.active = True
         if self.held:
@@ -86,7 +107,6 @@ class Field(ui.Frame):
     def render(self):
         self.canvas = pygame.Surface((self.canvas_rect.width,
                                     self.canvas_rect.height))
-        self.image = pygame.Surface((self.rect.width, self.rect.height))
         self.background.render()
         self.canvas.blit(self.background.image, (0, 0))
         if self.gridlines:
@@ -95,8 +115,10 @@ class Field(ui.Frame):
         self.canvas = pygame.transform.smoothscale(self.canvas, (
             int(self.canvas_rect.width*self.zoom),
             int(self.canvas_rect.height*self.zoom)))
-        self.image.blit(self.canvas, (self.canvas_rect.left,
-                    self.rect.height-int(self.zoom*self.canvas_rect.height))) #int(-140*self.zoom)
+        self.image = pygame.Surface((self.rect.width, self.rect.height))
+        self.image.fill((20,20,20))
+        self.image.blit(self.canvas, (int(self.canvas_rect.left*self.zoom),
+                    int(self.rect.height-self.zoom*self.canvas_rect.height)))
     def render_gridlines(self):
         overlay = pygame.Surface((self.canvas_rect.width,
                                 self.canvas_rect.height))
@@ -131,8 +153,3 @@ class Field(ui.Frame):
                     self.canvas.blit(occupant.avatar.image,
                         (x_blit-occupant.avatar.center[0],
                         y_blit-occupant.avatar.center[1]))
-    def place_character(self, character, x, y):
-        if not self.tiles[x][y].blocked:
-            self.tiles[x][y].occupant.append(character)
-            self.characters.append(character)
-            character.enter_field(x, y)

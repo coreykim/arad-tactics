@@ -20,6 +20,7 @@ def outlined_text(text, color=(255,255,255), bordercolor=(1,1,1)):
     return image
 
 class Frame(pygame.sprite.Sprite):
+    highlightcolor = (240,220,120)
     '''A barebones UI element that detects inputs'''
     def __init__(self, rect, color=None):
         super(Frame, self).__init__()
@@ -33,20 +34,12 @@ class Frame(pygame.sprite.Sprite):
         if self.color:
             self.image.fill(self.color)
     def input(self, event, caller):
-        pos = pygame.mouse.get_pos()
-        pos = (pos[0]*640/pygame.display.get_surface().get_width(),
-                pos[1]*480/pygame.display.get_surface().get_height())
-        if self.rect.collidepoint(pos):
-            if event.type==pygame.MOUSEMOTION:
-                self.mousemotion(caller, event)
-            elif event.type==pygame.MOUSEBUTTONDOWN:
-                self.mousebuttondown(caller, event)
-            elif event.type==pygame.MOUSEBUTTONUP:
-                self.mousebuttonup(caller, event)
-        else:
-            self.active = False
-            self.held = False
-            self.render()
+        if event.type==pygame.MOUSEMOTION:
+            self.mousemotion(caller, event)
+        elif event.type==pygame.MOUSEBUTTONDOWN:
+            self.mousebuttondown(caller, event)
+        elif event.type==pygame.MOUSEBUTTONUP:
+            self.mousebuttonup(caller, event)
     def mousemotion(self, caller, event):
         self.active = True
         self.render()
@@ -62,6 +55,22 @@ class Image(Frame):
         super(Image, self).__init__(rect)
     def render(self):
         pass
+class ImageButton(Frame):
+    def __init__(self, x, y, file, selection):
+        self.graphic = res.load_image(file)
+        rect = pygame.Rect(x, y, self.graphic.get_width()+2,
+                                self.graphic.get_height()+2)
+        super(ImageButton, self).__init__(rect)
+        self.selection = selection
+    def render(self):
+        self.image = pygame.Surface((self.rect.width, self.rect.height),
+                                    flags=pygame.SRCALPHA)
+        if self.active:
+            self.image.fill(self.highlightcolor)
+        self.image.blit(self.graphic, (1, 1))
+    def mousebuttondown(self, caller, event):
+        if event.button==1:
+            caller.selection = self.selection
 
 class TextLine(Frame):
     def __init__(self, x, y, text):
@@ -80,7 +89,7 @@ class TextSelection(Frame):
         super(TextSelection, self).__init__(rect)
     def render(self):
         if self.active:
-            self.image = outlined_text(self.text, color=(240,220,120))
+            self.image = outlined_text(self.text, color=self.highlightcolor)
         else:
             self.image = outlined_text(self.text)
     def mousebuttondown(self, caller, event):

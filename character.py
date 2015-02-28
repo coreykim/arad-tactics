@@ -59,13 +59,16 @@ class Character(object):
             self.speed = self.basestat.speed
             self.movement = self.basestat.movement
             self.drive = 0
-    def enter_field(self, x, y, direction=None):
-        if not direction:
-            if self.player:
-                self.direction = 1
-            else:
-                self.direction = -1
-        self.x, self.y = x, y
+    def enter_field(self, x, y, field, direction=None):
+        if not field.tiles[x][y].blocked:
+            field.tiles[x][y].occupant.append(self)
+            field.characters.append(self)
+            if not direction:
+                if self.player:
+                    self.direction = 1
+                else:
+                    self.direction = -1
+            self.x, self.y = x, y
     def learn_skill(self, SkillClass):
         skill = SkillClass()
         skill.owner = self

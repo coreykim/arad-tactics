@@ -31,16 +31,7 @@ class Manage(object):
         self.main.canvas.fill((80, 80, 80))
         self.ui.update()
         self.ui.draw(self.main.canvas)
-    def event_handler(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.main.quit = True
-            if event.type == pygame.VIDEORESIZE:
-                self.main.screen=pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
-            for sprite in self.ui.sprites():
-                sprite.input(event, self)
     def run(self):
-        self.event_handler()
         self.draw()
         if self.selection=='next':
             self.main.routine = battle.Battle(self.main)
