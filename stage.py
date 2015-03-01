@@ -8,7 +8,7 @@ class StageElement(object):
         self.spacing = spacing
 
 class StageAnimation(object):
-    def __init__(self, files, pos=(0, 0), spacing=(640, 480), speed=0.05):
+    def __init__(self, files, pos=(0, 0), spacing=(640, 480), speed=0.25):
         self.images = []
         for file in files:
             self.images.append(res.load_image(file))
@@ -22,13 +22,13 @@ class StageAnimation(object):
             self.frame = 0
 
 class Stage(object):
-    def __init__(self, field, backs, floors, animations=[]):
+    def __init__(self, field, backs, floors=[], animations=[]):
         self.width = max(field.rect.width, 
                 field.grid_width*field.columns+field.grid_tilt*field.rows)
         self.height = max(field.rect.height,
                 field.grid_height*field.rows+field.horizon+4)
-        self.static = pygame.Surface((self.width, self.height), flags=pygame.SRCALPHA)
-        self.static_floor = self.static.copy()
+        self.static = pygame.Surface((self.width, self.height))
+        self.static_floor = pygame.Surface((self.width, self.height), flags=pygame.SRCALPHA)
         self.animations = animations
         for back in backs+floors:
             repeat = int(self.width/back.spacing[0])+1
@@ -44,9 +44,9 @@ class Stage(object):
                         floor.pos[1]))
     def add_animations(self, surface):
         for animated in self.animations:
+            animated.update()
             repeat = int(self.width/animated.spacing[0])+1
             for i in range(repeat):
-                animated.update()
                 surface.blit(animated.images[int(animated.frame)],
                         (animated.pos[0]+animated.spacing[0]*i,
                         animated.pos[1]))
@@ -70,18 +70,18 @@ class FrostForest(Stage):
         super(FrostForest, self).__init__(field, backs)
 class Temple(Stage):
     def __init__(self, field):
-        backs = ([StageElement('stages/Temple/aganzo.img/0.png', pos=(0, 90),
-                            spacing=(224, 240))]
-                    )
+        backs = ([StageElement('stages/Temple/aganzo.img/0.png', pos=(0, 0),
+                            spacing=(224, 240))])
         super(Temple, self).__init__(field, backs)
 class Castle(Stage):
     def __init__(self, field):
-        backs = ([StageElement('stages/Castle/far_dr.img/0.png', pos=(0, 0))] +
-                    [StageElement('stages/Castle/200tile0.img/0.png', pos=(0, 0),
+        backs = ([StageElement('stages/Castle/far_dr.img/0.png', pos=(0, 0),
+                        spacing=(630,480))])
+        floors = ([StageElement('stages/Castle/200tile0.img/0.png', pos=(0, -50),
                         spacing=(224, 240))] +
-                    [StageElement('stages/Castle/200tile0.img/4.png', pos=(224, 0))]
-                    )
-        super(Castle, self).__init__(field, backs)
+                    [StageElement('stages/Castle/200tile0.img/4.png', pos=(224, -50),
+                        spacing=(224, 240))])
+        super(Castle, self).__init__(field, backs, floors=floors)
 class Sewer(Stage):
     def __init__(self, field):
         backs = ([StageElement('stages/Sewer/dcfar.img/0.png', pos=(0, 0),
@@ -97,7 +97,7 @@ class Sewer(Stage):
                         'stages/Sewer/dcfarstreamani.img/3.png',
                         'stages/Sewer/dcfarstreamani.img/4.png'],
                         pos=(0,146), spacing=(640,480))])
-        super(Sewer, self).__init__(field, backs, floors, animations=animations)
+        super(Sewer, self).__init__(field, backs, floors=floors, animations=animations)
 
 
 # class Sewer(Stage):

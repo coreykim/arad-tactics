@@ -17,7 +17,7 @@ class Battle(object):
         self.phase = 'action'
         self.player_turn = True
         self.turn_indicator = TurnIndicator()
-        self.field = Field(0, self.turn_indicator.rect.height,
+        self.field = Field(self, 0, self.turn_indicator.rect.height,
                             10, 5, stage.Sewer)
         self.ui.add(self.turn_indicator, self.field)
         self.main.data[0].enter_field(0, 0, self.field)
@@ -29,6 +29,8 @@ class Battle(object):
         if self.selection == 'turn':
             self.turn += 1
             self.selection = ' '
+            if self.turn==1:
+                self.ui.add(ui.TextLine(280, 240, str(self.main.clock.get_fps())))
         self.draw()
 
 class TurnIndicator(ui.Frame):
@@ -66,7 +68,8 @@ class Field(ui.Frame):
     grid_height = 30
     grid_tilt = 60
     horizon = 350
-    def __init__(self, x, y, columns, rows, background):
+    def __init__(self, caller, x, y, columns, rows, background):
+        self.caller = caller
         self.zoom = 1
         self.columns = columns
         self.rows = rows
@@ -105,10 +108,11 @@ class Field(ui.Frame):
         self.render()
     def render(self):
         self.canvas = self.background.static.copy()
-        self.background.add_animations(self.canvas)
-        self.canvas.set_clip(pygame.Rect(0, self.horizon-50, self.canvas.get_width(), 50))
-        self.canvas.blit(self.background.static_floor, (0,0))
-        self.canvas.set_clip(None)
+        if len(self.background.animations) > 0:
+            self.background.add_animations(self.canvas)
+            self.canvas.set_clip(pygame.Rect(0, self.horizon-50, self.canvas.get_width(), 50))
+            self.canvas.blit(self.background.static_floor, (0,0))
+            self.canvas.set_clip(None)
         self.render_occupants()
         self.canvas = pygame.transform.smoothscale(self.canvas, (
             int(self.canvas_rect.width*self.zoom),
@@ -138,7 +142,7 @@ class Field(ui.Frame):
                 (i*self.grid_width, self.horizon)
                 )
         overlay.unlock()
-        overlay.set_alpha(120)
+        overlay.set_alpha(180)
         self.background.static.blit(overlay, (0,0))
         self.background.static_floor.blit(overlay, (0,0))
     def render_occupants(self):
