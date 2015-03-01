@@ -118,7 +118,7 @@ class Field(ui.Frame):
                                 self.canvas_rect.height)).convert()
         overlay.fill((254, 254, 254))
         overlay.set_colorkey((254, 254, 254))
-        lightgrey = (200, 200, 200)
+        lightgrey = (150, 150, 150)
         overlay.lock()
         for i in range(self.rows+1):
             pygame.draw.line(overlay, lightgrey, 

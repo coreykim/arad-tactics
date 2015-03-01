@@ -12,11 +12,13 @@ class Main(object):
         self.routine = title.Title(self)
         self.quit = False
     def draw(self):
-        self.canvas = pygame.transform.smoothscale(self.canvas,
-            (pygame.display.get_surface().get_width(),
-            pygame.display.get_surface().get_height()))
-        self.screen.blit(self.canvas, (0,0))
-        self.canvas = pygame.Surface((self.ratio[0]*40, self.ratio[1]*40))
+        if self.canvas.get_rect() != pygame.display.get_surface().get_rect():
+            scaled_canvas = pygame.transform.smoothscale(self.canvas,
+                (pygame.display.get_surface().get_width(),
+                pygame.display.get_surface().get_height()))
+            self.screen.blit(scaled_canvas, (0,0))
+        else:
+            self.screen.blit(self.canvas, (0,0))
         pygame.display.flip()
     def event_handler(self):
         for event in pygame.event.get():
@@ -44,4 +46,4 @@ class Main(object):
             self.routine.run()
             self.draw()
             print self.clock.get_fps()
-            self.clock.tick(30)
+            self.clock.tick(180)
