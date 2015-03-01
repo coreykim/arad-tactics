@@ -18,7 +18,7 @@ class Battle(object):
         self.player_turn = True
         self.turn_indicator = TurnIndicator()
         self.field = Field(0, self.turn_indicator.rect.height,
-                            10, 5, stage.Sewer())
+                            10, 5, stage.Temple)
         self.ui.add(self.turn_indicator, self.field)
         self.main.data[0].enter_field(0, 0, self.field)
     def draw(self):
@@ -64,7 +64,7 @@ class Tile(object):
 class Field(ui.Frame):
     grid_width = 120
     grid_height = 30
-    grid_tilt = 35
+    grid_tilt = 60
     horizon = 350
     def __init__(self, x, y, columns, rows, background):
         self.zoom = 1
@@ -74,12 +74,11 @@ class Field(ui.Frame):
         self.canvas_rect = pygame.Rect(-self.grid_tilt, 0,
                 self.grid_width*columns+self.grid_tilt*rows,
                 self.grid_height*rows+self.horizon+4)
+        self.background = background(self)
+        self.render_gridlines()
         self.tiles = [[Tile()
                 for row in range(rows)]
                     for column in range(columns)]
-        self.background = background
-        self.gridlines = True
-        self.render_gridlines()
         super(Field, self).__init__(self.rect)
         self.characters = []
     def mousebuttondown(self, caller, event):
@@ -101,17 +100,11 @@ class Field(ui.Frame):
             dx = dx*640/pygame.display.get_surface().get_width()
             self.canvas_rect = self.canvas_rect.move((dx, 0))
     def update(self):
-        self.background.update()
         for character in self.characters:
             character.avatar.update()
         self.render()
     def render(self):
-        self.canvas = pygame.Surface((self.canvas_rect.width,
-                                    self.canvas_rect.height))
-        self.background.render()
-        self.canvas.blit(self.background.image, (0, 0))
-        if self.gridlines:
-            self.canvas.blit(self.gridlines_image, (0, 0))
+        self.canvas = self.background.static.copy()
         self.render_occupants()
         self.canvas = pygame.transform.smoothscale(self.canvas, (
             int(self.canvas_rect.width*self.zoom),
@@ -122,8 +115,7 @@ class Field(ui.Frame):
                     int(self.rect.height-self.zoom*self.canvas_rect.height)))
     def render_gridlines(self):
         overlay = pygame.Surface((self.canvas_rect.width,
-                                self.canvas_rect.height))
-        overlay = overlay.convert()
+                                self.canvas_rect.height)).convert()
         overlay.fill((254, 254, 254))
         overlay.set_colorkey((254, 254, 254))
         lightgrey = (200, 200, 200)
@@ -143,7 +135,7 @@ class Field(ui.Frame):
                 )
         overlay.unlock()
         overlay.set_alpha(120)
-        self.gridlines_image = overlay
+        self.background.static.blit(overlay, (0,0))
     def render_occupants(self):
         for column in range(self.columns):
             for row in range(self.rows):

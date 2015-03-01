@@ -21,10 +21,18 @@ if we're clipping, we want to clip before blit
 
 We want to shrink, THEN clip
 
-1. On init, blit and load every stage element into one image per frame, taking a number from the Field object to know how long to generate the stage, in order not to generate a stage whose space we can never use
+1. On init, load, blit, and save every stationary stage element into one image, taking a number from the Field object to know how long to generate the stage, in order not to generate a stage whose space we can never use
+1a. Do animated stage elements later.  They change everything, and it depends on how many I really want to use.
 2. Get a camera-scaled copy of the stage
 3. Set the clipping area of that stage based on camera
-4. Blit a camera-scaled copy of gridlines onto clipped, camera-scaled stage
+4. Blit a camera-scaled copy of gridlines onto clipped, camera-scaled stage.  This is the background.
 5. Blit a camera-scaled copy of characters/effects onto clipped, camera-scaled stage
 6. Blit the clipping area from the camera-scaled stage with all the stuff on it onto self.image
 7. Profit!
+
+
+static stage elements, animated stage elements
+things that are flat on the floor
+grid lines
+sort by row, then anchor point, a variable that determines where the object is sticking out of the ground
+foreground effects, like fog that's closer than the closest row
