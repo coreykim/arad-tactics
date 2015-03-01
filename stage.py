@@ -2,33 +2,6 @@ import pygame
 from resources import res
 
 class StageElement(object):
-    '''A piece of the stage on which the battle takes place.'''
-    def __init__(self, image, duration=1, pos=(0,0), spacing=(50,50)):
-        self.pos = pos
-        self.spacing = spacing
-        self.frames = []
-        self.add_frame(image, duration=duration)
-        self.frame_index = 0
-    def add_frame(self, image, duration=1):
-        frame = res.load_image(image)
-        self.frames += [frame]*duration
-    def animate(self):
-        self.frame_index += 1
-        if self.frame_index > len(self.frames)-1:
-            self.frame_index = 0
-class Stage(pygame.sprite.Sprite):
-    def __init__(self):
-        self.render()
-    def render(self):
-        self.image = pygame.Surface((1920, 960))
-        for element in self.elements:
-            pos = ((element.pos[0])*2, (element.pos[1])*2)
-            self.image.blit(element.frames[element.frame_index], pos)
-    def update(self):
-        for element in self.elements:
-            element.animate()
-
-class StageElement(object):
     def __init__(self, file, pos=(0, 0), spacing=(640, 480)):
         self.image = res.load_image(file)
         self.pos = pos
