@@ -2,15 +2,6 @@
 Blit only the animated parts of the background
 
 
-
-camera.rect = field.rect.copy()
-image -> canvas -> smoothscale(canvas.width/camera.width*field.width, canvas.height/camera.width*field.width) -> field
-when zooming: increase camera.width
-when scrolling +: decrease camera.left but stop at 0
-when scrolling -: increase camera.left but stop at canvas.width-camera.width
-
-copy is considerably faster than blitting onto a new image
-
 1. On init, blit and load every stage element into one image for each frame, because we need to do that before scaling.  Accept a number, either number of grids or number of pixels, to know how long to generate the stage, so we don't generate a longer stage than we need
 3. Get a camera-scaled stage as a new Surface
 4. Get another new Surface with flag=pygame.SRCALPHA

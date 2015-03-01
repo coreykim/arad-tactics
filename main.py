@@ -45,5 +45,5 @@ class Main(object):
             self.event_handler()
             self.routine.run()
             self.draw()
+            self.clock.tick(30)
             print self.clock.get_fps()
-            self.clock.tick(180)

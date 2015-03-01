@@ -18,7 +18,7 @@ class Battle(object):
         self.player_turn = True
         self.turn_indicator = TurnIndicator()
         self.field = Field(0, self.turn_indicator.rect.height,
-                            10, 5, stage.Temple)
+                            10, 5, stage.Sewer)
         self.ui.add(self.turn_indicator, self.field)
         self.main.data[0].enter_field(0, 0, self.field)
     def draw(self):
@@ -105,6 +105,7 @@ class Field(ui.Frame):
         self.render()
     def render(self):
         self.canvas = self.background.static.copy()
+        self.background.add_animations(self.canvas)
         self.render_occupants()
         self.canvas = pygame.transform.smoothscale(self.canvas, (
             int(self.canvas_rect.width*self.zoom),
