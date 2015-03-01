@@ -30,7 +30,7 @@ class Stage(object):
         self.static = pygame.Surface((self.width, self.height), flags=pygame.SRCALPHA)
         self.static_floor = self.static.copy()
         self.animations = animations
-        for back in backs:
+        for back in backs+floors:
             repeat = int(self.width/back.spacing[0])+1
             for i in range(repeat):
                 self.static.blit(back.image,
@@ -84,7 +84,7 @@ class Castle(Stage):
         super(Castle, self).__init__(field, backs)
 class Sewer(Stage):
     def __init__(self, field):
-        backs = ([StageElement('stages/Sewer/dcfar.img/0.png', pos=(0, 30),
+        backs = ([StageElement('stages/Sewer/dcfar.img/0.png', pos=(0, 0),
                 spacing=(640, 480))]
                 )
         floors = ([StageElement('stages/Sewer/tileb.img/0.png', pos=(0, 330),
@@ -96,7 +96,7 @@ class Sewer(Stage):
                         'stages/Sewer/dcfarstreamani.img/2.png',
                         'stages/Sewer/dcfarstreamani.img/3.png',
                         'stages/Sewer/dcfarstreamani.img/4.png'],
-                        pos=(0,164), spacing=(640,480))])
+                        pos=(0,146), spacing=(640,480))])
         super(Sewer, self).__init__(field, backs, floors, animations=animations)
 
 

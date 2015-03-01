@@ -106,7 +106,9 @@ class Field(ui.Frame):
     def render(self):
         self.canvas = self.background.static.copy()
         self.background.add_animations(self.canvas)
+        self.canvas.set_clip(pygame.Rect(0, self.horizon-50, self.canvas.get_width(), 50))
         self.canvas.blit(self.background.static_floor, (0,0))
+        self.canvas.set_clip(None)
         self.render_occupants()
         self.canvas = pygame.transform.smoothscale(self.canvas, (
             int(self.canvas_rect.width*self.zoom),
@@ -137,6 +139,7 @@ class Field(ui.Frame):
                 )
         overlay.unlock()
         overlay.set_alpha(120)
+        self.background.static.blit(overlay, (0,0))
         self.background.static_floor.blit(overlay, (0,0))
     def render_occupants(self):
         for column in range(self.columns):
