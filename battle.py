@@ -101,16 +101,19 @@ class Field(ui.Frame):
             self.camera.width = int(self.zoom_resolution[self.zoom][0])
             self.camera.height = int(self.zoom_resolution[self.zoom][1])
             self.camera.top = int(self.stage.height-self.camera.height)
-        print self.camera
     def mousebuttonup(self, caller, event):
         if event.button==1:
             self.held = False
             pos = event.pos
             pos = (pos[0]*640/pygame.display.get_surface().get_width()*
                     self.camera.width/self.rect.width+self.camera.left,
-                    pos[1]*480/pygame.display.get_surface().get_height()*
-                    self.camera.width/self.rect.width)
-            print pos
+                    (pos[1]*480/pygame.display.get_surface().get_height()
+                    -self.rect.top) * self.camera.width/self.rect.width
+                    +self.camera.top-self.horizon)
+            tile_y = pos[1]/self.grid_height
+            tile_x = (pos[0]-pos[1]*self.grid_tilt/self.grid_height)/self.grid_width
+            if 0<=tile_x<self.columns and 0<=tile_y<self.rows:
+                print int(tile_x), int(tile_y)
     def mousemotion(self, caller, event):
         self.active = True
         if self.held:
