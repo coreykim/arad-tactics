@@ -1,11 +1,15 @@
-class Sponge():
-    def __init__(self):
-        self.a = 5
-class Water():
-    def __init__(self, sponge):
-        self.soak = sponge.a
-bob = Sponge()
-dasani = Water(bob)
-bob.a = 8
+import pygame
+from resources import res
 
-print dasani.soak
+pygame.init()
+
+a = res.load_image('default_fighter.png')
+camera = pygame.Rect(50, 50, 500, 500)
+
+start = pygame.time.get_ticks()
+
+b = pygame.Surface((2000, 2000))
+b.blit(a, (0,0))
+c = pygame.Surface((2000, 2000))
+c.blit(b, (0,0), area=camera)
+print pygame.time.get_ticks()-start

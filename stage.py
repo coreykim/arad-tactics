@@ -26,7 +26,7 @@ class Stage(object):
         self.width = max(field.rect.width, 
                 field.grid_width*field.columns+field.grid_tilt*field.rows)
         self.height = max(field.rect.height,
-                field.grid_height*field.rows+field.horizon+4)
+                field.grid_height*field.rows+field.horizon+10)
         self.static = pygame.Surface((self.width, self.height))
         self.static_floor = pygame.Surface((self.width, self.height), flags=pygame.SRCALPHA)
         self.animations = animations
