@@ -12,7 +12,7 @@ class Title(object):
         self.ui = pygame.sprite.Group()
         self.selection = 'root'
         res.play_music('characterSelectStage.ogg')
-        self.splash = ui.Image(0, 0, 'illust'+str(random.randrange(5))+'.png')
+        self.splash = ui.Image(0, 0, res.load_image('illust'+str(random.randrange(5))+'.png'))
         self.splash.rect = self.splash.rect.move(0, 480-self.splash.rect.height)
         self.background = res.load_image('0.png')
         self.main.canvas.blit(self.background, (0,0))

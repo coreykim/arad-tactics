@@ -17,9 +17,12 @@ class Battle(object):
         self.phase = 0
         self.player_turn = True
         self.turn_indicator = TurnIndicator(self)
+        self.player_panel = PlayerPanel(self)
+        self.player_panel.select(self.main.data[0])
+        self.enemy_panel = EnemyPanel(self)
         self.field = Field(self, 0, self.turn_indicator.rect.height,
                             10, 5, stage.Sewer)
-        self.ui.add(self.turn_indicator, self.field)
+        self.ui.add(self.player_panel, self.enemy_panel, self.turn_indicator, self.field)
         self.main.data[0].enter_field(0, 0, self.field)
     def draw(self):
         self.main.canvas.fill((20, 20, 20))
@@ -35,6 +38,37 @@ class Battle(object):
             self.selection = ' '
         self.draw()
 
+class PlayerPanel(ui.Frame):
+    def __init__(self, caller):
+        self.rect = pygame.Rect(0, 0, 320-16, 41)
+        self.image = pygame.Surface(self.rect.size)
+        self.character = None
+        super(PlayerPanel, self).__init__(self.rect, color=(100, 100, 240))
+    def render(self):
+        self.image.fill((20, 20, 20))
+        if self.character:
+            self.image.blit(self.character.avatar.portrait, (0, 15))
+            font = res.load_font(14)
+            base = font.render(self.character.name, 0, (255, 255, 255), (20, 20, 20))
+            self.image.blit(base, (0, 0))
+            health_empty = pygame.Rect(27, 15, 320-16-27, 12)
+            self.image.fill((80, 80, 80), rect=health_empty)
+            health_full = pygame.Rect(27, 15, int((320-16-27)*
+                            self.character.hp/self.character.max_hp), 12)
+            self.image.fill((20, 220, 20), rect=health_empty)
+            drive_empty = pygame.Rect(27, 28, 320-16-27, 12)
+            self.image.fill((80, 80, 80), rect=drive_empty)
+    def select(self, character):
+        self.character = character
+        self.render()
+        
+class EnemyPanel(ui.Frame):
+    def __init__(self, caller):
+        self.rect = pygame.Rect(320+15, 0, 320-15, 41)
+        self.image = pygame.Surface(self.rect.size)
+        self.character = None
+        super(EnemyPanel, self).__init__(self.rect, color=(240, 100, 100))
+
 class TurnIndicator(ui.Frame):
     def __init__(self, caller):
         frames = ['player_action.png', 'enemy_reaction.png',
@@ -43,10 +77,11 @@ class TurnIndicator(ui.Frame):
         self.caller = caller
         for frame in frames:
             self.frame.append(res.load_image(frame))
-        self.rect = pygame.Rect(320-int(self.frame[0].get_width()/2),
+        self.rect = pygame.Rect(int(320-self.frame[0].get_width()/2),
                 0, self.frame[0].get_width(), self.frame[0].get_height())
         super(TurnIndicator, self).__init__(self.rect)
         self.selection = 'turn'
+        self.fps = None #FOR TESTING ONLY
     def render(self):
         self.image = pygame.Surface((self.rect.width, self.rect.height),
                                     flags=pygame.SRCALPHA)
@@ -56,12 +91,17 @@ class TurnIndicator(ui.Frame):
     def mousebuttondown(self, caller, event):
         if event.button==1:
             caller.selection = self.selection
+            caller.ui.remove(self.fps)
+            self.fps = ui.TextLine(0, 480-16, str(caller.main.clock.get_fps()))
+            caller.ui.add(self.fps) #FOR TESTING ONLY
+
 class Tile(object):
     def __init__(self):
         self.occupant = []
         self.effect = []
         self.terrain = [] #like a permanent effect
         self.blocked = False
+
 class Field(ui.Frame):
     grid_width = 120
     grid_height = 30
@@ -92,15 +132,9 @@ class Field(ui.Frame):
         if event.button==1:
             self.held = True
         if event.button==4 and self.zoom != len(self.zoom_resolution)-1:
-            self.zoom += 1
-            self.camera.width = int(self.zoom_resolution[self.zoom][0])
-            self.camera.height = int(self.zoom_resolution[self.zoom][1])
-            self.camera.top = int(self.stage.height-self.camera.height)
+            self.change_zoom(+1)
         if event.button==5 and self.zoom != 0:
-            self.zoom -= 1
-            self.camera.width = int(self.zoom_resolution[self.zoom][0])
-            self.camera.height = int(self.zoom_resolution[self.zoom][1])
-            self.camera.top = int(self.stage.height-self.camera.height)
+            self.change_zoom(-1)
     def mousebuttonup(self, caller, event):
         if event.button==1:
             self.held = False
@@ -122,6 +156,11 @@ class Field(ui.Frame):
             new_x = max(self.camera.left + dx, 0)
             new_x = min(new_x, self.stage.width-self.camera.width)
             self.camera.left = new_x
+    def change_zoom(self, amount):
+        self.zoom += amount
+        self.camera.width = int(self.zoom_resolution[self.zoom][0])
+        self.camera.height = int(self.zoom_resolution[self.zoom][1])
+        self.camera.top = int(self.stage.height-self.camera.height)
     def update(self):
         for character in self.characters:
             character.avatar.update()

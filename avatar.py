@@ -58,7 +58,8 @@ class Slayer(Avatar):
         self.hit1 = Animation(frames = range(96, 99), speed=0.12)
         self.play_animation(self.idle)
         self.height = 120
-        self.center = (116, 170)
+        self.center = (125, 198)
+        self.portrait = res.load_image('SlayerIcon.png')
 
 class Fighter(Avatar):
     def __init__(self):
@@ -71,3 +72,4 @@ class Fighter(Avatar):
         self.play_animation(self.idle)
         self.height = 120
         self.center = (62, 150)
+        self.portrait = res.load_image('FighterIcon.png')

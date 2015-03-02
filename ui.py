@@ -51,8 +51,8 @@ class Frame(pygame.sprite.Sprite):
         self.render()
 
 class Image(Frame):
-    def __init__(self, x, y, file):
-        self.image = res.load_image(file)
+    def __init__(self, x, y, image):
+        self.image = image
         rect = self.image.get_rect().move(x, y)
         super(Image, self).__init__(rect)
     def render(self):

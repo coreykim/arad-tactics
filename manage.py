@@ -15,6 +15,7 @@ class Manage(object):
         self.ui.add(ui.Frame((50, 20, 640-50, 480-20), color=(20,20,20)))
         self.ui.add(ui.Frame((0, 20, 50, 50), color=(20,20,20)))
         char = self.main.data[self.party_index]
+        self.ui.add(ui.Image(12, 32, char.avatar.portrait))
         align = (120, 50)
         self.ui.add(ui.TextLine(align[0], align[1], char.name))
         self.ui.add(ui.TextLine(align[0], align[1]+20, 'HP: {}/{}'.format(

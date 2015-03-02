@@ -1,19 +1,13 @@
-Frame: 360 height
-Grid: 150 height
+Inputs:
+-field tiles
+-turn indicator
+-skill buttons
 
-Temple:
-270 from top to grid ('horizon')
-480 total
-
-Sewer:
-About 370 from top to grid ('horizon')
-525 total height
-
-Camera serves as:
--Letting us know the scaling factor between the stage and the screen
--Telling us how much of the stage is off screen, horizontally, with camera.left
--Clipping area of the stage, which becomes its own surface
-
+Variables to track:
+-Phase (1-4)
+-Selected player
+-Selected enemy
+-The communal queue
 
 static stage elements, animated stage elements
 things that are flat on the floor
