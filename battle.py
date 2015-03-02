@@ -18,7 +18,7 @@ class Battle(object):
         self.player_turn = True
         self.turn_indicator = TurnIndicator(self)
         self.field = Field(self, 0, self.turn_indicator.rect.height,
-                            10, 5, stage.Temple)
+                            10, 5, stage.Sewer)
         self.ui.add(self.turn_indicator, self.field)
         self.main.data[0].enter_field(0, 0, self.field)
     def draw(self):
@@ -66,18 +66,21 @@ class Field(ui.Frame):
     grid_width = 120
     grid_height = 30
     grid_tilt = 60
-    horizon = 270
     def __init__(self, caller, x, y, columns, rows, stage):
         self.caller = caller
         self.columns = columns
         self.rows = rows
         self.rect = pygame.Rect(x, y, 640, 360)
         self.stage = stage(self)
-        self.camera = pygame.Rect(self.grid_tilt, self.stage.height-360, 640, 360)
-        self.zoom_resolution = [640]
-        while max(self.zoom_resolution) < self.stage.width:
-            self.zoom_resolution.append(int(min(self.stage.width, 
-                self.zoom_resolution[-1]+self.zoom_resolution[0]*0.25)))
+        self.horizon = self.stage.horizon
+        self.camera = pygame.Rect(self.grid_tilt, self.stage.height-360,
+                                    640, 360)
+        self.zoom_resolution = [(640,360)]
+        while self.zoom_resolution[-1][0] < self.stage.width:
+            x = int(min(self.stage.width, self.zoom_resolution[-1][0]+
+                                        self.zoom_resolution[0][0]*0.25))
+            y = int(min(self.stage.height, x*360/640))
+            self.zoom_resolution.append((x, y))
         self.zoom = 0
         self.render_gridlines()
         self.tiles = [[Tile()
@@ -90,20 +93,24 @@ class Field(ui.Frame):
             self.held = True
         if event.button==4 and self.zoom != len(self.zoom_resolution)-1:
             self.zoom += 1
-            self.camera.height = int(self.zoom_resolution[self.zoom]/self.camera.width*self.camera.height)
-            self.camera.width = int(self.zoom_resolution[self.zoom])
+            self.camera.width = int(self.zoom_resolution[self.zoom][0])
+            self.camera.height = int(self.zoom_resolution[self.zoom][1])
+            self.camera.top = int(self.stage.height-self.camera.height)
         if event.button==5 and self.zoom != 0:
             self.zoom -= 1
-            self.camera.height = int(self.zoom_resolution[self.zoom]/self.camera.width*self.camera.height)
-            self.camera.width = int(self.zoom_resolution[self.zoom])
+            self.camera.width = int(self.zoom_resolution[self.zoom][0])
+            self.camera.height = int(self.zoom_resolution[self.zoom][1])
+            self.camera.top = int(self.stage.height-self.camera.height)
+        print self.camera
     def mousebuttonup(self, caller, event):
         if event.button==1:
             self.held = False
             pos = event.pos
-            pos = (pos[0]*640/pygame.display.get_surface().get_width(),
-                    pos[1]*480/pygame.display.get_surface().get_height())
-            if tile_x in range(self.columns) and tile_y in range(self.rows):
-                pass
+            pos = (pos[0]*640/pygame.display.get_surface().get_width()*
+                    self.camera.width/self.rect.width+self.camera.left,
+                    pos[1]*480/pygame.display.get_surface().get_height()*
+                    self.camera.width/self.rect.width)
+            print pos
     def mousemotion(self, caller, event):
         self.active = True
         if self.held:

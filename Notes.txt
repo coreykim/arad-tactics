@@ -1,16 +1,18 @@
-stage width, height
-frame width, height
-camera left, top, width, height: Changes whenever we zoom or scroll.  This is also the clipping area of the background that we blit characters and stuff onto.
-	left=max(left, 0), left=min(left, stage.width-camera.width)
-	width=min(width, stage.width), height=min(height, stage.height)
-Initialize: frame is always the same, stage is based on rows and columns, camera is the same as the frame except left=grid_tilt.  Zoom is 0.
-Render: Make a copy of the static background, set its clipping area to the camera.  Blit the animated background, set the clipping area to the modified rect and blit the static foreground, then set the clipping area back to the camera and blit characters and effects.  If stage wider than frame (this should always be the case), smoothscale the camera to the frame's size.
-Zoom out: Check if camera width is the same as stage width.  If it is, do nothing.  If it isn't, zoom -= 0.25, then set the camera width to min(stage.width, int(frame width/zoom)).  Move camera rect by R% of the difference between new camera width and old camera width, where R is based on event.pos/ frame.width
-Zoom in: Check if camera width is the same as frame width.  If it is, do nothing.  If it isn't, zoom += 0.25 then set the camera width to max(frame.width, int(frame width/zoom)).  Move camera rect by R% of the difference between new camera width and old camera width, where R is based on event.pos/frame.width
-Scroll: Get event.rel, then move camera rect by rel*camera/frame
+Frame: 360 height
+Grid: 150 height
 
-Generate zoom resolutions ahead of time and put them in a list
-make zoom an index that traverses the list
+Temple:
+270 from top to grid ('horizon')
+480 total
+
+Sewer:
+About 370 from top to grid ('horizon')
+525 total height
+
+Camera serves as:
+-Letting us know the scaling factor between the stage and the screen
+-Telling us how much of the stage is off screen, horizontally, with camera.left
+-Clipping area of the stage, which becomes its own surface
 
 
 static stage elements, animated stage elements
