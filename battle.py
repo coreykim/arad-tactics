@@ -67,17 +67,18 @@ class Field(ui.Frame):
     grid_height = 30
     grid_tilt = 60
     horizon = 270
-    def __init__(self, caller, x, y, columns, rows, background):
+    def __init__(self, caller, x, y, columns, rows, stage):
         self.caller = caller
         self.columns = columns
         self.rows = rows
         self.rect = pygame.Rect(x, y, 640, 360)
-        self.background = background(self)
-        self.camera = pygame.Rect(self.grid_tilt, self.background.height-360, 640, 360)
+        self.stage = stage(self)
+        self.camera = pygame.Rect(self.grid_tilt, self.stage.height-360, 640, 360)
+        self.zoom_resolution = [640]
+        while max(self.zoom_resolution) < self.stage.width:
+            self.zoom_resolution.append(int(min(self.stage.width, 
+                self.zoom_resolution[-1]+self.zoom_resolution[0]*0.25)))
         self.zoom = 0
-        self.canvas_rect = pygame.Rect(-self.grid_tilt, 0,
-                self.grid_width*columns+self.grid_tilt*rows,
-                self.grid_height*rows+self.horizon+4)
         self.render_gridlines()
         self.tiles = [[Tile()
                 for row in range(rows)]
@@ -87,54 +88,53 @@ class Field(ui.Frame):
     def mousebuttondown(self, caller, event):
         if event.button==1:
             self.held = True
-        if event.button==4:
-            self.zoom = max(self.zoom-0.25, 0.5)
-        if event.button==5:
-            self.zoom = min(self.zoom+0.25, 1)
+        if event.button==4 and self.zoom != len(self.zoom_resolution)-1:
+            self.zoom += 1
+            self.camera.height = int(self.zoom_resolution[self.zoom]/self.camera.width*self.camera.height)
+            self.camera.width = int(self.zoom_resolution[self.zoom])
+        if event.button==5 and self.zoom != 0:
+            self.zoom -= 1
+            self.camera.height = int(self.zoom_resolution[self.zoom]/self.camera.width*self.camera.height)
+            self.camera.width = int(self.zoom_resolution[self.zoom])
     def mousebuttonup(self, caller, event):
         if event.button==1:
             self.held = False
             pos = event.pos
             pos = (pos[0]*640/pygame.display.get_surface().get_width(),
                     pos[1]*480/pygame.display.get_surface().get_height())
-            tile_y = (pos[1]-self.rect.top)/self.grid_height
-            tile_x = (pos[0]-self.grid_tilt*self.rows+
-                    (pos[1]-self.rect.top)*self.grid_tilt/self.grid_height-
-                    self.canvas_rect.left)/self.grid_width
-            print tile_x, tile_y
             if tile_x in range(self.columns) and tile_y in range(self.rows):
                 pass
     def mousemotion(self, caller, event):
         self.active = True
         if self.held:
             dx, dy = event.rel
-            dx = min(dx, -self.canvas_rect.left)
-            dx = max(dx, 640-self.canvas_rect.left-int(self.canvas_rect.width*self.zoom))
-            dx = dx*640/pygame.display.get_surface().get_width()
-            self.canvas_rect = self.canvas_rect.move((dx, 0))
+            dx = -int(0.5+dx*self.camera.width/self.rect.width)
+            new_x = max(self.camera.left + dx, 0)
+            new_x = min(new_x, self.stage.width-self.camera.width)
+            self.camera.left = new_x
     def update(self):
         for character in self.characters:
             character.avatar.update()
         self.render()
     def render(self):
-        self.canvas = self.background.static.copy()
+        self.canvas = self.stage.static.copy()
         self.canvas.set_clip(self.camera)
-        if len(self.background.animations) > 0:
-            self.background.add_animations(self.canvas)
+        if len(self.stage.animations) > 0:
+            self.stage.add_animations(self.canvas)
             self.canvas.set_clip(pygame.Rect(0, self.horizon-50, self.canvas.get_width(), 50))
-            self.canvas.blit(self.background.static_floor, (0,0))
+            self.canvas.blit(self.stage.static_floor, (0,0))
             self.canvas.set_clip(self.camera)
         self.render_occupants()
         self.subcanvas = pygame.Surface((self.camera.width, self.camera.height))
         self.subcanvas.blit(self.canvas, (0,0), area=self.camera)
         self.subcanvas = pygame.transform.smoothscale(self.subcanvas, (
-            self.rect.width, min(self.rect.height, self.camera.height/self.camera.width*self.rect.width)))
+            self.rect.width, min(self.rect.height, int(self.camera.height/self.camera.width*self.rect.width))))
         self.image = pygame.Surface((self.rect.width, self.rect.height))
         self.image.fill((20,20,20))
         self.image.blit(self.subcanvas, (0, int(self.rect.height-self.subcanvas.get_height())))
     def render_gridlines(self):
-        overlay = pygame.Surface((self.background.width,
-                                self.background.height)).convert()
+        overlay = pygame.Surface((self.stage.width,
+                                self.stage.height)).convert()
         overlay.fill((254, 254, 254))
         overlay.set_colorkey((254, 254, 254))
         lightgrey = (150, 150, 150)
@@ -154,8 +154,8 @@ class Field(ui.Frame):
                 )
         overlay.unlock()
         overlay.set_alpha(180)
-        self.background.static.blit(overlay, (0,0))
-        self.background.static_floor.blit(overlay, (0,0))
+        self.stage.static.blit(overlay, (0,0))
+        self.stage.static_floor.blit(overlay, (0,0))
     def render_occupants(self):
         for column in range(self.columns):
             for row in range(self.rows):
