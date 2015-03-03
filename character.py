@@ -19,6 +19,12 @@ class SlayerStat(BaseStat):
 class FighterStat(BaseStat):
     def __init__(self):
         BaseStat.__init__(self, hp=1000, resilience=55, power=50, speed=60)
+class LugaruStat(BaseStat):
+    def __init__(self):
+        BaseStat.__init__(self, hp=400, resilience=30, power=30, speed=60)
+class ClayGolemStat(BaseStat):
+    def __init__(self):
+        BaseStat.__init__(self, hp=900, resilience=70, power=55, speed=30)
 
 class CharacterFlags(object):
     def __init__(self):
@@ -29,7 +35,6 @@ class CharacterFlags(object):
         self.dead = False #Disables everything forever
 
 class Character(object):
-    """Needs map, map-related globals, PyGame for sprites"""
     def __init__(self, name, job="monster", avatar=None, basestat=None, player=False, ai=None):
         self.name = name
         self.job = job
@@ -40,10 +45,11 @@ class Character(object):
         self.load_stats()
         self.player = player
         self.ai = ai
-        self.direction = None
         if self.ai:
             self.ai.owner = self
+        self.direction = None
         self.x = self.y = None
+        self.field = None
         self.flags = CharacterFlags()
         self.skill = []
         self.attack = []
@@ -60,8 +66,9 @@ class Character(object):
             self.movement = self.basestat.movement
             self.drive = 0
     def enter_field(self, x, y, field, direction=None):
-        if not field.tiles[x][y].blocked:
+        if not field.is_blocked_at(x, y):
             field.tiles[x][y].occupant.append(self)
+            self.field = field
             field.characters.append(self)
             if not direction:
                 if self.player:
@@ -104,3 +111,85 @@ class Character(object):
             self.die()
     def die(self):
         pass
+    def change_pos(self, dx, dy):
+        '''self.field must be defined'''
+        #Clamp movement to prevent going off the map
+        dx = min(dx, self.field.columns-1-self.x)
+        dx = max(dx, -self.x)
+        dy = min(dy, self.field.rows-1-self.y)
+        dy = max(dy, -self.y)
+        #Check if the spot's already taken
+        if not self.field.is_blocked_at(self.x+dx, self.y+dy):
+            self.field.tiles[self.x][self.y].occupant.remove(self)
+            self.x += dx
+            self.y += dy
+            self.field.tiles[self.x][self.y].occupant.append(self)
+    def movement_area(self):
+        '''self.field must be defined'''
+        if self.flags.moved:
+            return []
+        def neighbor(x, y): # First define a function to find empty neighboring tiles or the destination
+            neighbors = []
+            if not self.field.is_blocked_at(x-1, y,
+                                check_players = not self.player,
+                                check_enemies = self.player):
+                neighbors.append((x-1, y))
+            if not self.field.is_blocked_at(x+1, y,
+                                check_players = not self.player,
+                                check_enemies = self.player):
+                neighbors.append((x+1, y))
+            if not self.field.is_blocked_at(x, y-1,
+                                check_players = not self.player,
+                                check_enemies = self.player):
+                neighbors.append((x, y-1))
+            if not self.field.is_blocked_at(x, y+1,
+                                check_players = not self.player,
+                                check_enemies = self.player):
+                neighbors.append((x, y+1))
+            return neighbors
+        #Start Breadth First Search
+        frontier = Queue(maxsize=0)
+        frontier.put((self.x, self.y))
+        came_from = {}
+        came_from[(self.x, self.y)] = None
+        while not frontier.empty():
+            current = frontier.get()
+            for next in neighbor(current[0], current[1]):
+                if next not in came_from:
+                    frontier.put(next)
+                    came_from[next] = current
+        #End Breadth First Search
+        #Find distance
+        tiles_in_range = []
+        for x in range(self.field.columns):
+            for y in range(self.field.rows):
+                if (x, y) in came_from:
+                    current = (x, y)
+                    path = [current]
+                    while current != (self.x, self.y):
+                        current = came_from[current]
+                        path.append(current)
+                    distance = len(path)-1
+                    if distance <= self.movement and not self.field.is_blocked_at(x, y):
+                        tiles_in_range.append((x, y))
+        return tiles_in_range
+    def move(self, dest_x, dest_y):
+        '''The character proactively moves itself to a destination.'''
+        if self.flags.moved:
+            return
+        #Clamp destination to map boundaries
+        dest_x = min(dest_x, self.field.columns-1)
+        dest_x = max(dest_x, 0)
+        dest_y = min(dest_y, self.field.rows-1)
+        dest_y = max(dest_y, 0)
+        #Check if we're already there
+        if dest_x == self.x and dest_y == self.y:
+            return
+        #Check if we can move there
+        if (dest_x, dest_y) in self.movement_area():
+            if cmp(dest_x-self.x, 0) == -self.direction:
+                self.direction = -self.direction
+            self.change_pos(dest_x-self.x, dest_y-self.y)
+            self.moved=True
+        else:
+            print "Can't move there."

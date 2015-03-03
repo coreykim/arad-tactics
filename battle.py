@@ -18,25 +18,34 @@ class Battle(object):
         self.player_turn = True
         self.turn_indicator = TurnIndicator(self)
         self.player_panel = PlayerPanel(self)
-        self.player_panel.select(self.main.data[0])
+        self.select(self.main.data[0])
         self.enemy_panel = EnemyPanel(self)
         self.field = Field(self, 0, self.turn_indicator.rect.height,
                             10, 5, stage.Sewer)
         self.ui.add(self.player_panel, self.enemy_panel, self.turn_indicator, self.field)
         self.main.data[0].enter_field(0, 0, self.field)
+        monster1 = character.Character('Lugaru',
+                avatar=avatar.Lugaru(), basestat=character.LugaruStat())
+        monster2 = character.Character('Clay Golem',
+                avatar=avatar.ClayGolem(), basestat=character.ClayGolemStat())
+        monster1.enter_field(9, 2, self.field)
+        monster2.enter_field(9, 3, self.field)
+    def select(self, character):
+        if character.player:
+            self.player = character
+            self.player_panel.character = character
+            self.player_panel.render()
+        else:
+            self.enemy = character
+            self.enemy_panel.character = character
+            self.enemy_panel.render()
     def draw(self):
         self.main.canvas.fill((20, 20, 20))
         self.ui.update()
         self.ui.draw(self.main.canvas)
     def run(self):
-        if self.selection == 'turn':
-            self.turn += 1
-            self.phase += 1
-            if self.phase == 4:
-                self.phase = 0
-            self.turn_indicator.render()
-            self.selection = ' '
         self.draw()
+
 
 class PlayerPanel(ui.Frame):
     def __init__(self, caller):
@@ -58,9 +67,6 @@ class PlayerPanel(ui.Frame):
             self.image.fill((20, 220, 20), rect=health_empty)
             drive_empty = pygame.Rect(27, 28, 320-16-27, 12)
             self.image.fill((80, 80, 80), rect=drive_empty)
-    def select(self, character):
-        self.character = character
-        self.render()
         
 class EnemyPanel(ui.Frame):
     def __init__(self, caller):
@@ -81,7 +87,6 @@ class TurnIndicator(ui.Frame):
                 0, self.frame[0].get_width(), self.frame[0].get_height())
         super(TurnIndicator, self).__init__(self.rect)
         self.selection = 'turn'
-        self.fps = None #FOR TESTING ONLY
     def render(self):
         self.image = pygame.Surface((self.rect.width, self.rect.height),
                                     flags=pygame.SRCALPHA)
@@ -90,17 +95,17 @@ class TurnIndicator(ui.Frame):
         self.image.blit(self.frame[self.caller.phase], (0, 0))
     def mousebuttondown(self, caller, event):
         if event.button==1:
-            caller.selection = self.selection
-            caller.ui.remove(self.fps)
-            self.fps = ui.TextLine(0, 480-16, str(caller.main.clock.get_fps()))
-            caller.ui.add(self.fps) #FOR TESTING ONLY
+            self.caller.turn += 1
+            self.caller.phase += 1
+            if self.caller.phase == 4:
+                self.caller.phase = 0
+            self.render()
 
 class Tile(object):
     def __init__(self):
         self.occupant = []
         self.effect = []
         self.terrain = [] #like a permanent effect
-        self.blocked = False
 
 class Field(ui.Frame):
     grid_width = 120
@@ -126,6 +131,9 @@ class Field(ui.Frame):
         self.tiles = [[Tile()
                 for row in range(rows)]
                     for column in range(columns)]
+        self.move_highlights = []
+        self.white_highlight = self.draw_highlight((200, 200, 200))
+        self.yellow_highlight = self.draw_highlight((200, 200, 20))
         super(Field, self).__init__(self.rect)
         self.characters = []
     def mousebuttondown(self, caller, event):
@@ -144,10 +152,18 @@ class Field(ui.Frame):
                     (pos[1]*480/pygame.display.get_surface().get_height()
                     -self.rect.top) * self.camera.width/self.rect.width
                     +self.camera.top-self.horizon)
-            tile_y = pos[1]/self.grid_height
-            tile_x = (pos[0]-pos[1]*self.grid_tilt/self.grid_height)/self.grid_width
+            tile_y = int(pos[1]/self.grid_height)
+            tile_x = int((pos[0]-pos[1]*self.grid_tilt/self.grid_height)/self.grid_width)
             if 0<=tile_x<self.columns and 0<=tile_y<self.rows:
-                print int(tile_x), int(tile_y)
+                if not self.is_blocked_at(tile_x, tile_y) and self.caller.phase==0:
+                    if len(self.move_highlights)>0:
+                        self.caller.player.move(tile_x, tile_y)
+                        self.move_highlights = []
+                    else:
+                        self.move_highlights += self.caller.player.movement_area()
+                elif ((tile_x, tile_y) == (self.caller.player.x, self.caller.player.y)
+                                        and self.caller.phase==0):
+                    self.caller.player.direction = -self.caller.player.direction
     def mousemotion(self, caller, event):
         self.active = True
         if self.held:
@@ -173,6 +189,7 @@ class Field(ui.Frame):
             self.canvas.set_clip(pygame.Rect(0, self.horizon-50, self.canvas.get_width(), 50))
             self.canvas.blit(self.stage.static_floor, (0,0))
             self.canvas.set_clip(self.camera)
+        self.render_highlights()
         self.render_occupants()
         self.subcanvas = pygame.Surface((self.camera.width, self.camera.height))
         self.subcanvas.blit(self.canvas, (0,0), area=self.camera)
@@ -209,9 +226,54 @@ class Field(ui.Frame):
         for column in range(self.columns):
             for row in range(self.rows):
                 for occupant in self.tiles[column][row].occupant:
-                    x_blit = ((column+0.5)*self.grid_width+
-                            (row+0.5)*self.grid_tilt)
-                    y_blit = self.horizon+(row+0.5)*self.grid_height+4
-                    self.canvas.blit(occupant.avatar.image,
-                        (x_blit-occupant.avatar.center[0],
-                        y_blit-occupant.avatar.center[1]))
+                    if occupant.direction == 1:
+                        x_blit = ((column+0.5)*self.grid_width+
+                                (row+0.5)*self.grid_tilt)
+                        y_blit = self.horizon+(row+0.5)*self.grid_height+4
+                        self.canvas.blit(occupant.avatar.image,
+                            (x_blit-occupant.avatar.center[0],
+                            y_blit-occupant.avatar.center[1]))
+                    else:
+                        x_blit = ((column+0.5)*self.grid_width+
+                                (row+0.5)*self.grid_tilt)
+                        y_blit = self.horizon+(row+0.5)*self.grid_height+4
+                        self.canvas.blit(pygame.transform.flip(occupant.avatar.image, 1, 0),
+                            (x_blit+occupant.avatar.center[0]-occupant.avatar.image.get_width(),
+                            y_blit-occupant.avatar.center[1]))
+    def render_highlights(self):
+        overlay = pygame.Surface((self.stage.width,
+                                self.stage.height), flags=pygame.SRCALPHA)
+        if len(self.move_highlights)>0:
+            for tile in self.move_highlights:
+                x = self.grid_tilt*tile[1]+self.grid_width*tile[0]
+                y = self.horizon+self.grid_height*tile[1]
+                self.canvas.blit(self.white_highlight, (x, y))
+    def draw_highlight(self, color): #Run this in init() once per color that we want to have and save it
+        highlight = pygame.Surface((self.grid_width+self.grid_tilt, self.grid_height+1))
+        pointlist = [(1, 1), #Upper left
+                    (self.grid_width-1, 1), #Upper right
+                    (self.grid_tilt+self.grid_width-1, self.grid_height-1), #Lower right
+                    (self.grid_tilt+1, self.grid_height-1)] #Lower left
+        pygame.draw.polygon(highlight, color, pointlist, 0)
+        highlight.set_colorkey((0, 0, 0))
+        highlight = highlight.convert()
+        highlight.set_alpha(60)
+        return highlight
+    def is_blocked_at(self, x, y, check_players=True, check_enemies=True, check_terrain=True, check_effects=True):
+        if x not in range(self.columns) or y not in range(self.rows):
+            return True
+        tile = self.tiles[x][y]
+        for occupant in tile.occupant:
+            if check_players and occupant.player:
+                return True
+            if check_enemies and not occupant.player:
+                return True
+        if check_terrain:
+            for terrain in tile.terrain:
+                if terrain.block:
+                    return True
+        if check_effects:
+            for effect in tile.effect:
+                if effect.block:
+                    return True
+        return False

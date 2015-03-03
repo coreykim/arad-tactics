@@ -73,3 +73,27 @@ class Fighter(Avatar):
         self.height = 120
         self.center = (62, 150)
         self.portrait = res.load_image('FighterIcon.png')
+
+class Lugaru(Avatar):
+    def __init__(self):
+        super(Lugaru, self).__init__(['lugaru'])
+        self.idle = Animation(frames = range(33, 37), speed=0.12)
+        self.attack1 = Animation(frames = range(0, 6), speed=0.4)
+        self.hit1 = Animation(frames = [15]*3, speed=0.1)
+        self.play_animation(self.idle)
+        self.height = 80
+        self.center = 65, 100
+        self.portrait = res.unpack_sheet('monsterface')[11]
+
+class ClayGolem(Avatar):
+    def __init__(self):
+        super(ClayGolem, self).__init__(['claygolem'])
+        self.idle = Animation(frames = [16]*25+range(16, 25), speed=0.12)
+        self.attack1 = Animation(frames = range(8, 16), speed=0.2)
+        self.hit1 = Animation(frames = [39]*3, speed=0.1)
+        self.play_animation(self.idle)
+        self.height = 150
+        self.center = 130, 205
+        self.portrait = res.unpack_sheet('monsterface')[12]
+
+

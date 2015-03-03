@@ -106,7 +106,11 @@ class CharacterSelect(ui.Frame):
     def mousebuttondown(self, caller, event):
         if event.button == 1:
             caller.selection = self.name
+            if self.name == 'Slayer':
+                stat = character.SlayerStat()
+            elif self.name == 'Fighter':
+                stat = character.FighterStat()
             new_character = character.Character(self.name, job='slayer',
-                avatar=self.avatar, basestat=character.SlayerStat(), player=True)
+                avatar=self.avatar, basestat=stat, player=True)
             caller.main.data = [new_character, None, None]
             caller.main.routine = manage.Manage(caller.main)

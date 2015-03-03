@@ -19,11 +19,13 @@ class Resources(object):
             print 'Cannot load image:', name
             raise SystemExit, message
         return image
-    def unpack_sheet(self, name, ignore=0):
+    def unpack_sheet(self, name):
         results = []
         sheet = self.load_image(name+'.png')
         with open(os.path.join(self.dir, name+'.txt'), 'r') as sheet_map:
             for i, line in enumerate(sheet_map):
+                if i==0:
+                    ignore = len(line.split()[0])-1
                 index=(int(line.split()[0][ignore::]))
                 x_start=(int(line.split()[2]))
                 y_start=(int(line.split()[3]))

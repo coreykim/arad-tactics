@@ -9,6 +9,38 @@ Variables to track:
 -Selected enemy
 -The communal queue
 
+Highlights:
+-Movement - White
+-Skill preview - Green
+-Incoming skill - Yellow
+-Skill resolution - Red
+-Mouseover highlight would be nice.  If field is active, but not being held, show a simple highlight where the mouse is.  Not a priority.
+Highlights are mutually exclusive.  Unlocking movement stores the tiles to highlight on click.  Mousing over a skill passes the tiles to highlight, and these are displayed until the skill button loses focus.  Tiles passed from the caller take precedence over movement tiles.
+
+if preview_tile:
+	Show skill preview highlights
+elif unlock_movement:
+	Show movement highlights
+else:
+	Read the combat queue and show incoming attack highlights
+
+
+Control flow:
+Clicking on enabled UI elements pass a selection to the routine module.
+Each run of the routine module takes the selection and reacts to it, then returns the selection to ' '
+
+OR
+
+UI elements just run the function in their input response functions instead of passing a selection to the routine.  This is for anything that doesn't have to interact with other UI elements.  The run() function shall be the only one that references all of the UI elements.
+
+-Click on a character: Goes to run(), so that player/enemy_panel can take the clicked character and set it.  Clicking the player panel's character during the Action phase changes its direction.
+-Click on an empty tile: Can do it immediately, or go to run() for consistency
+-Click and drag or zoom with wheel: Do it immediately; it has no gameplay effect whatsoever
+-Click on a skill icon: Add to queue immediately for rapid Moonlight Slash spamming.  Make sure that all relevant functions get updated.  Also, queued skills show up in the bottom pane.
+-Mouseover a skill icon: Go to run() so that the field can highlight the appropriate tiles.
+-Click on the turn indicator: Go to run(), because a lot of stuff has to happen on turn changes.
+
+
 static stage elements, animated stage elements
 things that are flat on the floor
 grid lines
