@@ -26,14 +26,6 @@ class ClayGolemStat(BaseStat):
     def __init__(self):
         BaseStat.__init__(self, hp=900, resilience=70, power=55, speed=30)
 
-class CharacterFlags(object):
-    def __init__(self):
-        self.moved = False #Disables further movement and postmove
-        self.staggered = False #Disables actions in queue from resolving
-        self.combo_count = 0 #Disables movement, starts combo
-        self.done = False #Disables further action this turn
-        self.dead = False #Disables everything forever
-
 class Character(object):
     def __init__(self, name, job="monster", avatar=None, basestat=None, player=False, ai=None):
         self.name = name
@@ -50,13 +42,19 @@ class Character(object):
         self.direction = None
         self.x = self.y = None
         self.field = None
-        self.flags = CharacterFlags()
+        self.moved = False #Disables further movement and postmove
+        self.staggered = False #Disables actions in queue from resolving
+        self.combo_count = 0 #Disables movement, starts combo
+        self.done = False #Disables further action this turn
+        self.dead = False #Disables everything forever
+        self.skill_points = 0
         self.skill = []
         self.attack = []
         self.defend = []
         self.special = []
         self.passive = []
         self.effects = []
+        self.queue = []
     def load_stats(self):
         if self.basestat:
             self.hp = self.max_hp = self.basestat.hp
@@ -65,21 +63,43 @@ class Character(object):
             self.speed = self.basestat.speed
             self.movement = self.basestat.movement
             self.drive = 0
+    def every_turn(self):
+        self.moved = False #Disables further movement and postmove
+        self.staggered = False #Disables actions in queue from resolving
+        self.combo_count = 0 #Disables movement, starts combo
+        self.done = False #Disables further action this turn
+        expired_effects = []
+        for effect in self.effects:
+            effect.tick()
+            effect.duration -= 1
+            if effect.duration <= 0:
+                expired_effects.append(effect)
+        for effect in expired_effects:
+            self.lose_effect(effect)
+        for skill in self.skill:
+            skill.tick()
+        self.staggered = False
     def enter_field(self, x, y, field, direction=None):
         if not field.is_blocked_at(x, y):
-            field.tiles[x][y].occupant.append(self)
             self.field = field
+            field.tile[x][y].occupant.append(self)
             field.characters.append(self)
+            if self.player:
+                field.players.append(self)
+            else:
+                field.enemies.append(self)
             if not direction:
                 if self.player:
                     self.direction = 1
                 else:
                     self.direction = -1
             self.x, self.y = x, y
+            for skill in self.skill:
+                skill.field = self.field
     def learn_skill(self, SkillClass):
         skill = SkillClass()
         skill.owner = self
-        self.skill.append = skill
+        self.skill.append(skill)
         if skill.type == "attack":
             self.attack.append(skill)
         if skill.type == "defend":
@@ -100,6 +120,7 @@ class Character(object):
             existing_effect.merge(effect)
         else:
             effect.owner = self
+            effect.field = self.field
             self.effects.append(effect)
     def lose_effect(self, effect):
         '''Takes effect instances'''
@@ -120,13 +141,13 @@ class Character(object):
         dy = max(dy, -self.y)
         #Check if the spot's already taken
         if not self.field.is_blocked_at(self.x+dx, self.y+dy):
-            self.field.tiles[self.x][self.y].occupant.remove(self)
+            self.field.tile[self.x][self.y].occupant.remove(self)
             self.x += dx
             self.y += dy
-            self.field.tiles[self.x][self.y].occupant.append(self)
+            self.field.tile[self.x][self.y].occupant.append(self)
     def movement_area(self):
         '''self.field must be defined'''
-        if self.flags.moved:
+        if self.moved:
             return []
         def neighbor(x, y): # First define a function to find empty neighboring tiles or the destination
             neighbors = []
@@ -175,7 +196,7 @@ class Character(object):
         return tiles_in_range
     def move(self, dest_x, dest_y):
         '''The character proactively moves itself to a destination.'''
-        if self.flags.moved:
+        if self.moved:
             return
         #Clamp destination to map boundaries
         dest_x = min(dest_x, self.field.columns-1)

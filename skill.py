@@ -2,9 +2,13 @@ from __future__ import division
 import random
 import avatar
 from math import *
+from resources import res
 
 class Skill(object):
-    """Needs map, Character(), and map-related backend globals"""
+    queue = []
+    active_combo = []
+    active_action = None
+    active_index = 0
     def __init__(self, name, type, startup=50, damage=[], stagger=[],
                 preview_area=[], ai_priority = 10, postmove=True,
                 finisher=False, drive_requirement=0, drive_cost=0):
@@ -17,8 +21,8 @@ class Skill(object):
         self.drive_cost = drive_cost
         self.preview_area = preview_area #For preview and for AI
         self.affected_area = [] #For resolution phase display
-        self.sound = None
-        self.miss_sound = load_sound("miss.wav")
+        self.sound = res.load_sound("hit.wav")
+        self.miss_sound = res.load_sound("miss.wav")
         self.owner = None
         self.ai_priority = ai_priority
         self.postmove = postmove
@@ -78,11 +82,11 @@ class Skill(object):
         for i, direction in enumerate(directions):
             for tile in self.preview_area:
                 x, y = origin_x+tile[0]*direction, origin_y+tile[1]
-                if x in range(MAP_WIDTH) and y in range(MAP_HEIGHT):
-                    if map[x][y].occupant:
-                        if map[x][y].occupant.side != self.owner.side:
+                if x in range(self.owner.field.columns) and y in range(self.owner.field.rows):
+                    for occupant in self.owner.field.tile[x][y].occupant:
+                        if occupant.player != self.owner.player:
                             targets[i] += 1.0
-                            if (x - origin_x)*map[x][y].occupant.direction > 0: #if this is a back attack
+                            if (x - origin_x)*occupant.direction > 0: #if this is a back attack
                                 targets[i] += 0.5
         if Combat.phase == "reaction":
             return targets[0]*self.ai_priority, self.owner.direction
@@ -92,7 +96,7 @@ class Skill(object):
                 return targets[0]*self.ai_priority, 1
             else:
                 return targets[1]*self.ai_priority, -1
-    def queue(self):
+    def add_to_queue(self):
         if not self.pre_use():
             return
         else:
@@ -104,46 +108,21 @@ class Skill(object):
             if self.finisher or self.type is "defend":
                 self.owner.done = True
     def combo_check(self, targets):
-        if Combat.combo_index is not 0:
+        if self.active_index is not 0:
             passed_targets = []
             for target in targets:
-                if self.startup <= target.stagger_last or target.staggered:
+                if self.startup <= target.stagger:
                     passed_targets.append(target)
                 else:
                     print "{} broke out of the combo.".format(target.name)
             return passed_targets
         else:
             return targets
-    def sheet_unpack(self, item):
-        icon = []
-        sheet = load_image(item+'.png', scale=1, convert=False)
-        '''item is the path minus extension to the sheet, dest is a list of images to blit onto'''
-        with open(os.path.join(resources_dir, item+'.txt'), 'r') as sheet_map:
-            for i, line in enumerate(sheet_map):
-                x_size=(int(line.split()[4]))
-                y_size=(int(line.split()[5]))
-                icon.append(pygame.Surface((x_size, y_size), flags=SRCALPHA))
-        with open(os.path.join(resources_dir, item+'.txt'), 'r') as sheet_map:
-            for i, line in enumerate(sheet_map):
-                index=(int(line.split()[0]))
-                x_start=(int(line.split()[2]))
-                y_start=(int(line.split()[3]))
-                x_size=(int(line.split()[4]))
-                y_size=(int(line.split()[5]))
-                cutout = (x_start, y_start, x_size, y_size)
-                icon[index].blit(sheet, (0, 0), cutout)
-                if SCALE == int(SCALE):
-                    icon[index]=pygame.transform.scale(icon[index],
-                        (int(icon[index].get_width()*SCALE), int(icon[index].get_height()*SCALE)))
-                else:
-                    icon[index]=pygame.transform.smoothscale(icon[index],
-                        (int(icon[index].get_width()*SCALE), int(icon[index].get_height()*SCALE)))
-        return icon
     #Targeting functions
     def tiles_in_radius(self, center_x, center_y, radius):
         tiles = []
-        for x in range(MAP_WIDTH):
-            for y in range(MAP_HEIGHT):
+        for x in range(self.owner.field.columns):
+            for y in range(self.owner.field.rows):
                 if abs(x-center_x)+abs(y-center_y)<=radius:
                     tiles.append((x, y))
         return tiles
@@ -153,14 +132,14 @@ class Skill(object):
             x, y = self.owner.x+tile[0]*self.owner.direction, self.owner.y+tile[1]
             if not tile in self.affected_area:
                 self.affected_area.append(tile)
-            if x in range(MAP_WIDTH) and y in range(MAP_HEIGHT):
-                if map[x][y].occupant:
-                    if (not map[x][y].occupant.dead and (
-                        (map[x][y].occupant.side != self.owner.side and
+            if x in range(self.owner.field.columns) and y in range(self.owner.field.rows):
+                for occupant in self.owner.field.tile[x][y].occupant:
+                    if (not occupant.dead and (
+                        (occupant.player != self.owner.player and
                         enemies==True) or
-                        (map[x][y].occupant.side == self.owner.side and
+                        (occupant.player == self.owner.player and
                         friendlies==True))):
-                        targets.append(map[x][y].occupant)
+                        targets.append(occupant)
         return self.combo_check(targets)
     def target_projectile(self, tiles, pierce=0):
         targets = []
@@ -169,11 +148,11 @@ class Skill(object):
             if not tile in self.affected_area:
                 self.affected_area.append(tile)
             x, y = self.owner.x+tile[0]*self.owner.direction, self.owner.y+tile[1]
-            if x > MAP_WIDTH-1 or x < 0 or y > MAP_HEIGHT or y < 0:
+            if x > self.owner.field.columns-1 or x < 0 or y > self.owner.field.rows or y < 0:
                 break
-            if map[x][y].occupant:
-                if map[x][y].occupant.side != self.owner.side and not map[x][y].occupant.dead:
-                    targets.append(map[x][y].occupant)
+            for occupant in self.owner.field.tile[x][y].occupant:
+                if occupant.player != self.owner.player and not occupant.dead:
+                    targets.append(occupant)
                     if pierce==0:
                         break
                     else:
@@ -182,38 +161,27 @@ class Skill(object):
     #Effect functions
     def do_damage(self, targets, base_damage, stagger=10):
         stagger += self.surprise_stagger
-        print "{} stagger".format(stagger)
         if self.owner.avatar:
             if self.owner.avatar.attack1:
-                self.owner.avatar.play_anim(self.owner.avatar.attack1, 0.5)
+                self.owner.avatar.play_animation(self.owner.avatar.attack1)
         damaged_targets = []
         for target in targets:
             if not target.dead:
                 damage = sqrt(self.owner.power/target.power)*base_damage
                 #Adjust for combo
                 if not self.finisher:
-                    damage = damage*(1+0.2*Combat.combo_index)/len(Combat.current_combo)
+                    damage = damage*(1+0.2*self.active_index)/len(self.active_combo)
                 for effect in self.owner.effects:
                     damage, stagger = effect.outgoing_damage(damage, stagger, self, target)
                 for effect in target.effects:
                     damage, stagger = effect.incoming_damage(damage, stagger, self)
                 target.take_damage(int(damage))
-                target.stagger_current += stagger
-                if target.stagger_total + target.stagger_last + target.stagger_current >=target.resilience:
+                print "Did {} damage to {}.".format(damage, target.name)
+                target.stagger = stagger
+                if target.stagger >= target.resilience:
                     target.staggered = True
                 if damage > 0:
                     damaged_targets.append(target)
-                    severity = damage/target.max_hp
-                    if severity < 0.2:
-                        target.hitfx = load_image("hitfx01.bmp", colorkey=(-1,0))
-                    elif severity < 0.4:
-                        target.hitfx = load_image("hitfx02.bmp", colorkey=(-1,0))
-                    elif severity < 0.6:
-                        target.hitfx = load_image("hitfx03.bmp", colorkey=(-1,0))
-                    elif severity < 0.8:
-                        target.hitfx = load_image("hitfx04.bmp", colorkey=(-1,0))
-                    else:
-                        target.hitfx = load_image("hitfx05.bmp", colorkey=(-1,0))
         if len(damaged_targets)>0:
             self.sound.play()
         else:
@@ -237,8 +205,8 @@ class Skill(object):
                 for i in range(knockback)[::-1]:
                     x = target.x + self.owner.direction * (i+1)
                     y = target.y
-                    if x in range(MAP_WIDTH):
-                        if not map[x][y].occupant:
+                    if x in range(self.owner.field.columns):
+                        if len(self.owner.field.tile[x][y].occupant)==0:
                             dx = self.owner.direction * (i+1)
                             break
                 if dx > 0:
@@ -250,10 +218,10 @@ class Skill(object):
         for i in range(distance):
             x = self.owner.x + self.owner.direction * (1 + i)
             y = self.owner.y
-            if x > MAP_WIDTH-1 or x < 0:
+            if x > self.owner.field.columns-1 or x < 0:
                 dx = self.owner.direction*i
                 break
-            elif map[x][y].occupant:
+            elif len(self.owner.field.tile[x][y].occupant)>0:
                 dx = self.owner.direction*i
                 break
             elif i == distance-1:
@@ -266,8 +234,8 @@ class Skill(object):
             if not target.dead:
                 x, y = target.x, target.y
                 behind_x = int(x+copysign(1,x-self.owner.x))
-                if behind_x in range(MAP_WIDTH) and y in range(MAP_HEIGHT):
-                    if not map[behind_x][y].occupant:
+                if behind_x in range(self.owner.field.columns) and y in range(self.owner.field.rows):
+                    if len(self.owner.field.tile[behind_x][y].occupant)==0:
                         eligible_targets.append(target)
         if len(eligible_targets)>0:
             target = eligible_targets[random.randrange(len(eligible_targets))]
@@ -279,13 +247,12 @@ class Skill(object):
             if not target.dead:
                 target.gain_effect(effect, duration=duration)
     def tick(self):
-        pass
+        self.used = 0
 class Swing(Skill):
+    icon = res.unpack_sheet('slayer_skill_icon')[8]
     def __init__(self):
         Skill.__init__(self, "Swing", "attack", startup=10, damage=[100],
                         stagger=[12], preview_area=[(1,-1),(1,0),(2,0),(1,1)])
-        self.sound = load_sound("hit.wav")
-        self.icon = self.sheet_unpack('slayer_skill_icon')[8]
     def get_desc_body(self):
         return ["Generate 5 Drive if you make contact with an enemy."]
     def do(self):
@@ -294,11 +261,10 @@ class Swing(Skill):
         if len(damaged)>0:
             self.owner.drive=min(self.owner.drive+5, 100)
 class Thrust(Skill):
+    icon = res.unpack_sheet('slayer_skill_icon')[42]
     def __init__(self):
         Skill.__init__(self, "Thrust", "attack", startup=12, damage=[120],
                         stagger=[14], preview_area=[(1,0),(2,0),(3,0)])
-        self.sound = load_sound("hit.wav")
-        self.icon = self.sheet_unpack('slayer_skill_icon')[42]
     def get_desc_body(self):
         return ["Generate 5 Drive if you make contact with an enemy."]
     def do(self):
@@ -307,12 +273,11 @@ class Thrust(Skill):
         if len(damaged)>0:
             self.owner.drive+=min(self.owner.drive+5, 100)
 class GhostSlash(Skill):
+    icon = res.unpack_sheet('slayer_skill_icon')[10]
     def __init__(self):
         Skill.__init__(self, "Ghost Slash", "attack", startup=8, damage=[200],
                         stagger=[18], preview_area=[(1,0),(2,0),(3,0)],
                         finisher=True)
-        self.sound = load_sound("hit.wav")
-        self.icon = self.sheet_unpack('slayer_skill_icon')[10]
     def get_desc_body(self):
         return ["Finisher (ends your turn on use, "
                 "does full damage at the end of combos).", 
@@ -322,12 +287,11 @@ class GhostSlash(Skill):
         damaged = self.do_damage(targets, self.damage[0], stagger=self.stagger[0])
         self.knockback_on_stagger(damaged)
 class MoonlightSlash(Skill):
+    icon = res.unpack_sheet('slayer_skill_icon')[160]
     def __init__(self):
         Skill.__init__(self, "Moonlight Slash", "attack", startup=13,
                         damage=[140, 140, 240], stagger=[13, 16, 8],
                         preview_area=[(1,-1),(1,0),(2,0),(1,1)])
-        self.sound = load_sound("hit.wav")
-        self.icon = self.sheet_unpack('slayer_skill_icon')[160]
         self.usable = 3
         self.consecutive_hits = 0
     def get_desc_header(self):
@@ -354,19 +318,20 @@ class MoonlightSlash(Skill):
         self.consecutive_hits += 1
         self.knockback_on_stagger(damaged)
     def tick(self):
+        self.used = 0
         self.consecutive_hits = 0
 class Guard(Skill):
+    icon = res.unpack_sheet('slayer_skill_icon')[24]
     def __init__(self):
         Skill.__init__(self, "Guard", "defend", startup=1)
-        self.icon = self.sheet_unpack('slayer_skill_icon')[24]
     def get_desc_body(self):
         return ["Reduces incoming frontal damage by 75%."]
     def do(self):
         self.owner.gain_effect(E_Guard, duration=1)
 class Backstep(Skill):
+    icon = res.unpack_sheet('common_skill_icon')[0]
     def __init__(self):
         Skill.__init__(self, "Backstep", "defend", startup=5, preview_area=[(-1,0)])
-        self.icon = self.sheet_unpack('common_skill_icon')[0]
     def get_desc_body(self):
         return ["Move back one tile to gain the Dodge effect.  ",
                 "You avoid damage from frontal attacks with 10 or more startup, "
@@ -374,7 +339,7 @@ class Backstep(Skill):
                 "it takes to hit you increases by 2 for each hit dodged."]
     def do(self):
         targets = self.target_area(self.preview_area)
-        if len(targets)==0 and self.preview_area[0][0]+self.owner.x in range(MAP_WIDTH):
+        if len(targets)==0 and self.preview_area[0][0]+self.owner.x in range(self.owner.field.columns):
             self.affected_area = []
             self.owner.change_pos(-self.owner.direction, 0)
             self.owner.gain_effect(E_Dodge, duration=1)
@@ -385,7 +350,7 @@ class HurricaneRush(Skill):
                     "A medium speed attack that moves the user forward by up to 2 tiles, " 
                     "then hits 2 spaces in front.  "
                     "Knocks back by 1 tile against staggered enemies."])
-        self.sound = load_sound("hit.wav")
+
     def do(self):
         self.dash(2)
         targets = self.target_area([(1,0),(2,0)])
@@ -398,8 +363,8 @@ class PowerWave(Skill):
         self.desc = (["Damage: 25", "Startup: 15", "Stagger: 15",
                     "A slow attack that covers a lot of area.  "
                     "Knocks back by 1 tile against staggered enemies.  Can't be used after moving."])
-        self.sound = load_sound("hit.wav")
-        self.icon = self.sheet_unpack('slayer_skill_icon')[4]
+
+        self.icon = res.unpack_sheet('slayer_skill_icon')[4]
     def do(self):
         targets = self.target_area(self.preview_area)
         damaged = self.do_damage(targets, 25, stagger=15)
@@ -413,8 +378,8 @@ class PowerGeyser(Skill):
                     "A slow attack that covers a massive area.  "
                     "Knocks back by 2 tiles against staggered enemies.  Can't be used after moving.  "
                     "Does full damage when used at the end of a combo."])
-        self.sound = load_sound("hit.wav")
-        self.icon = self.sheet_unpack('slayer_skill_icon')[6]
+
+        self.icon = res.unpack_sheet('slayer_skill_icon')[6]
     def do(self):
         targets = self.target_area(self.preview_area)
         damaged = self.do_damage(targets, 50, stagger=20)
@@ -428,7 +393,7 @@ class EinTrigger(Skill):
                     "then follows up with a range 4 projectile that hits the first enemy in a forward line for 20 damage.  "
                     "The melee hit knocks back by 1 tile against staggered enemies, but the projectile "
                     "has no knockback."])
-        self.sound = load_sound("hit.wav")
+
     def do(self):
         targets = self.target_area([(1,0)])
         damaged = self.do_damage(targets, 20, stagger=10)
@@ -442,7 +407,7 @@ class Blackout(Skill):
                     "A tricky attack that attempts to teleport the user behind the first enemy within its range.  " 
                     "The teleport fails if the space behind its target is already occupied.  Whether or not the "
                     "teleport is successful, it is followed up by a range 1 melee attack."])
-        self.sound = load_sound("hit.wav")
+
     def do(self):
         targets = self.target_projectile(self.preview_area)
         self.port_behind(targets)
@@ -472,14 +437,14 @@ class Special(Skill):
         if self.drive_cost>0:
             text += ["Costs {} Drive".format(self.drive_cost)]
         return text
-    def queue(self):
+    def add_to_queue(self):
         if not self.pre_use():
             return
         else:
             print "{} queued {}.".format(self.owner.name, self.name)
             #Set flags
         if self.owner.avatar.cast1:
-            self.owner.avatar.play_anim(self.owner.avatar.cast1, 0.5)
+            self.owner.avatar.play_animation(self.owner.avatar.cast1)
         self.do()
         self.timer = self.cooldown
     def tick(self):
@@ -489,9 +454,9 @@ class Special(Skill):
             self.timer = 0
 
 class Kazan(Special):
+    icon = res.unpack_sheet('slayer_skill_icon')[52]
     def __init__(self):
         Special.__init__(self, "Kazan", cooldown=6)
-        self.icon = self.sheet_unpack('slayer_skill_icon')[52]
     def get_desc_body(self):
         return ["Summons Kazan in front of you.",
                 "Allies within 1 tile of Kazan deal +12% damage.  "
@@ -501,9 +466,9 @@ class Kazan(Special):
         effect = T_Kazan(self.owner.x+self.owner.direction, self.owner.y, 
                     self.owner)
 class Bremen(Special):
+    icon = res.unpack_sheet('slayer_skill_icon')[84]
     def __init__(self):
         Special.__init__(self, "Bremen", cooldown=6, drive_requirement=20)
-        self.icon = self.sheet_unpack('slayer_skill_icon')[84]
     def get_desc_body(self):
         return ["Summons Bremen in front of you.",
                 "Enemies within 1 tile of Bremen take +12% damage.  "
@@ -513,9 +478,9 @@ class Bremen(Special):
         effect = T_Bremen(self.owner.x+self.owner.direction, self.owner.y, 
                     self.owner)
 class Unshackle(Special):
+    icon = res.unpack_sheet('slayer_skill_icon')[80]
     def __init__(self):
         Special.__init__(self, "Unshackle", cooldown=10)
-        self.icon = self.sheet_unpack('slayer_skill_icon')[80]
     def get_desc_body(self):
         return ["Unshackles adjacent friendly ghosts.  Unshackled ghosts have their "
                 "effects increased by 25%, their radii increased "
@@ -526,9 +491,9 @@ class Unshackle(Special):
     def do(self):
         tiles = self.tiles_in_radius(self.owner.x, self.owner.y, 1)
         for tile in tiles:
-            tile = map[tile[0]][tile[1]]
+            tile = self.field.tile[tile[0]][tile[1]]
             for effect in tile.effects:
-                if effect.ghost and effect.side==self.owner.side:
+                if effect.ghost and effect.player==self.owner.player:
                     print "Buffed {}".format(effect.name)
                     effect.strength *= 1.25
                     effect.damage *= 1.25
@@ -536,15 +501,16 @@ class Unshackle(Special):
                     effect.do()
                     break
 class Retreat(Special):
+    icon = res.unpack_sheet('common_skill_icon')[2]
     def __init__(self):
         Special.__init__(self, "Retreat", cooldown=0)
-        self.icon = self.sheet_unpack('common_skill_icon')[2]
     def get_desc_body(self):
         return ["A test skill to go back to the party management page "
                 "without having to win or lose.",
                 "WARNING: THIS WILL MESS EVERYTHING UP"]
     def do(self):
-        Combat.victory = True
+        return
+
 class Effect(object):
     def __init__(self, name, duration, icon=None, id_name=None, duration_stacking=False):
         self.name = name
@@ -637,36 +603,37 @@ class TileEffect(Skill):
         if self.avatar:
             self.avatar.owner = self
         self.stacking = stacking
-        self.owner = None
-        self.side = None
+        self.owner = creator
+        self.player = creator.player
+        self.field = creator.field
         self.x, self.y = x, y
         if x < 0:
             self.x = 0
-        if x > MAP_WIDTH-1:
-            self.x = MAP_WIDTH-1
+        if x > self.field.columns-1:
+            self.x = self.field.columns-1
         if y < 0:
             self.y = 0
-        if y > MAP_HEIGHT-1:
-            self.y = MAP_HEIGHT-1
+        if y > self.field.rows-1:
+            self.y = self.field.rows-1
         self.direction = creator.direction
         self.x_blit, self.y_blit = 0, 0
-        map[x][y].effects.append(self)
+        self.field.tile[x][y].effects.append(self)
         self.ghost = False
     def target_area(self, tiles, friendly=True):
         targets = []
         for tile in tiles:
             x, y = tile[0], tile[1]
-            if x in range(MAP_WIDTH) and y in range(MAP_HEIGHT):
-                if map[x][y].occupant:
-                    if (self.side==None or 
-                        (map[x][y].occupant.side == self.side and friendly) or
-                        (map[x][y].occupant.side != self.side and not friendly)):
-                        targets.append(map[x][y].occupant)
+            if x in range(self.field.columns) and y in range(self.field.rows):
+                for occupant in self.field.tile[x][y].occupant:
+                    if (self.player==None or 
+                        (occupant.player == self.player and friendly) or
+                        (occupant.player != self.player and not friendly)):
+                        targets.append(occupant)
         return targets
 class T_Kazan(TileEffect):
     def __init__(self, x, y, creator, strength=0.12, duration=6):
         TileEffect.__init__(self, "Kazan", x, y, creator, duration=duration, avatar=avatar.Kazan(), stacking=False)
-        self.side = creator.side
+        self.player = creator.player
         self.strength = strength
         self.damage = 40
         self.radius = 1
@@ -682,7 +649,7 @@ class T_Kazan(TileEffect):
 class T_Bremen(TileEffect):
     def __init__(self, x, y, creator, strength=0.12, duration=6):
         TileEffect.__init__(self, "Bremen", x, y, creator, duration=duration, avatar=avatar.Bremen(), stacking=False)
-        self.side = creator.side
+        self.player = creator.player
         self.strength = strength
         self.damage = 40
         self.radius = 1

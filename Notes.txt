@@ -1,3 +1,55 @@
+Battle control flow:
+If phase 0 or 1:
+If it's the player turn, show the skill buttons of the selected player and allow the turn indicator to mark all player characters as done
+If it's the player turn and phase 0, allow the selected player to move and change direction
+If all non-AI characters for the turn are done, run the ai, which does nothing if it's not their turn or it's the resolution phase, but marks themselves as done otherwise.
+If all AI characters for the turn are done, next_phase()
+
+if phase 3:
+skills need to know what its combo is and where it is in its combo
+battle() can hold the active action as a local variable that it doesn't need to remember for more than one run()
+If we've received mousebuttondown input, resolve() one action
+
+
+Skill points:
+-No intermediate levels, just max.
+-Once you buy a skill, you then also get a choice of skill upgrades
+-Skill upgrades are unlocked at a higher level than the original skill level requirement.  Lower level skills have more slots.
+
+Skill tree:
+Skills are separated by tree and tier
+You need one talent of the previous tier to get a talent of the next tier
+Basic attacks are tier 0 and you start with them.
+
+Problems to avoid:
+-1 or max: You either buy or don't buy a skill, or they have diminishing returns
+-Wasting points in early skills: late skills require Drive, so you need a mix of both
+
+Drive:
+In games with cooldowns, high level skills have high cooldowns.
+Does not translate to the Drive system; high Drive require skills are necessary to have an incentive to build Drive.
+-Drive require
+-Drive consume skills are burst damage.  Build enemies to make burst damage worthwhile by giving them alternating periods of vulnerability.
+-Stats scale with Drive.  Awakenings set you at -100 Drive, and make it harder to build Drive.  Mouseover the Drive bar should give you your bonus damage from Drive.
+-Slow attacks that need to be combo'd into.
+
+Character progress benchmarks:
+-Awaken: should happen well before the end of the game, but after the middle.  The Awakening passive focuses on a single tree, so this is basically where you choose your class.
+-Obtain legendary weapon: actually happens fairly early on, because your weapon grows with YOUR legend
+-EX Skills: After awakening, this is your endgame progression
+-Drive generation: Skills that used to generate Drive now generate more Drive, skills that didn't generate Drive now generate Drive, skills that consumed Drive are now free, etc.
+
+Ghosts are more like passives; weak but always useful.
+Grabs are mutually exclusive due to grab guard.
+Slow attacks require combo linkers to be effective.
+Your starting character is hard to mess up but recruitables have more room to be made weak.
+As your character experiences personal growth, his/her max Drive goes up.
+
+Effects:
+-DoT: every resolution phase
+-Incoming and outgoing damage modifiers: every resolution phase
+-Move reduction: every owner's action phase (3 turns)
+
 Inputs:
 -field tiles
 -turn indicator
@@ -25,13 +77,6 @@ else:
 	Read the combat queue and show incoming attack highlights
 
 
-Control flow:
-Clicking on enabled UI elements pass a selection to the routine module.
-Each run of the routine module takes the selection and reacts to it, then returns the selection to ' '
-
-OR
-
-UI elements just run the function in their input response functions instead of passing a selection to the routine.  This is for anything that doesn't have to interact with other UI elements.  The run() function shall be the only one that references all of the UI elements.
 
 -Click on a character: Goes to run(), so that player/enemy_panel can take the clicked character and set it.  Clicking the player panel's character during the Action phase changes its direction.
 -Click on an empty tile: Can do it immediately, or go to run() for consistency

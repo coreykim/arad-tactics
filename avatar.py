@@ -29,6 +29,8 @@ class Avatar(pygame.sprite.Sprite):
         self.frame_count += self.animation.speed
         if self.frame_count >= len(self.animation.frames):
             self.frame_count = 0
+            if self.animation is not self.idle:
+                self.animation = self.idle
         self.image = self.images[self.animation.frames[int(self.frame_count)]]
     def play_animation(self, animation):
         if animation:
@@ -96,4 +98,18 @@ class ClayGolem(Avatar):
         self.center = 130, 205
         self.portrait = res.unpack_sheet('monsterface')[12]
 
+class Kazan(Avatar):
+    def __init__(self):
+        super(Kazan, self).__init__(['ghostkhazan1'])
+        self.idle = Animation(frames = range(8), speed=0.12)
+        self.play_animation(self.idle)
+        self.height = 110
+        self.center = 50, 115
 
+class Bremen(Avatar):
+    def __init__(self):
+        super(Bremen, self).__init__(['ghostbremen1'])
+        self.idle = Animation(frames = range(8), speed=0.12)
+        self.play_animation(self.idle)
+        self.height = 110
+        self.center = 50, 115

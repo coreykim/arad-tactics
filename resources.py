@@ -53,4 +53,18 @@ class Resources(object):
             raise SystemExit(str(geterror()))
         pygame.mixer.music.set_volume(0.5)
         pygame.mixer.music.play(-1)
+    def load_sound(self, name):
+        """Generic function to load sounds in PyGame"""
+        class NoneSound:
+            def play(self): pass
+        if not pygame.mixer or not pygame.mixer.get_init():
+            return NoneSound()
+        fullname = os.path.join(self.dir, name)
+        try:
+            sound = pygame.mixer.Sound(fullname)
+        except pygame.error:
+            print ('Cannot load sound: %s' % fullname)
+            raise SystemExit(str(geterror()))
+        sound.set_volume(0.1)
+        return sound
 res = Resources()

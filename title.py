@@ -5,6 +5,7 @@ import manage
 import random
 import avatar
 import character
+import skill
 
 class Title(object):
     def __init__(self, main):
@@ -112,5 +113,15 @@ class CharacterSelect(ui.Frame):
                 stat = character.FighterStat()
             new_character = character.Character(self.name, job='slayer',
                 avatar=self.avatar, basestat=stat, player=True)
+            new_character.learn_skill(skill.Swing)
+            new_character.learn_skill(skill.Thrust)
+            new_character.learn_skill(skill.Guard)
+            new_character.learn_skill(skill.Backstep)
+            new_character.learn_skill(skill.MoonlightSlash)
+            new_character.learn_skill(skill.GhostSlash)
+            new_character.learn_skill(skill.Kazan)
+            new_character.learn_skill(skill.Bremen)
+            new_character.learn_skill(skill.Unshackle)
+            new_character.skill_points += 1
             caller.main.data = [new_character, None, None]
             caller.main.routine = manage.Manage(caller.main)
