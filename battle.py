@@ -318,6 +318,9 @@ class Field(ui.Frame):
     def update(self):
         for character in self.characters:
             character.avatar.update()
+        for tile in self.tiles:
+            for effect in tile.effects:
+                effect.avatar.update()
         self.render()
     def render(self):
         self.canvas = self.stage.static.copy()
@@ -363,21 +366,19 @@ class Field(ui.Frame):
     def render_occupants(self):
         for column in range(self.columns):
             for row in range(self.rows):
-                for occupant in self.tile[column][row].occupant:
-                    if occupant.direction == 1:
-                        x_blit = ((column+0.5)*self.grid_width+
-                                (row+0.5)*self.grid_tilt)
-                        y_blit = self.horizon+(row+0.5)*self.grid_height+4
-                        self.canvas.blit(occupant.avatar.image,
-                            (x_blit-occupant.avatar.center[0],
-                            y_blit-occupant.avatar.center[1]))
+                for thing in (self.tile[column][row].occupant + 
+                                self.tile[column][row].effects):
+                    x_blit = ((column+0.5)*self.grid_width+
+                            (row+0.5)*self.grid_tilt)
+                    y_blit = self.horizon+(row+0.5)*self.grid_height+4
+                    if thing.direction == 1:
+                        self.canvas.blit(thing.avatar.image,
+                            (x_blit-thing.avatar.center[0],
+                            y_blit-thing.avatar.center[1]))
                     else:
-                        x_blit = ((column+0.5)*self.grid_width+
-                                (row+0.5)*self.grid_tilt)
-                        y_blit = self.horizon+(row+0.5)*self.grid_height+4
-                        self.canvas.blit(pygame.transform.flip(occupant.avatar.image, 1, 0),
-                            (x_blit+occupant.avatar.center[0]-occupant.avatar.image.get_width(),
-                            y_blit-occupant.avatar.center[1]))
+                        self.canvas.blit(pygame.transform.flip(thing.avatar.image, 1, 0),
+                            (x_blit+thing.avatar.center[0]-thing.avatar.image.get_width(),
+                            y_blit-thing.avatar.center[1]))
     def render_highlights(self):
         overlay = pygame.Surface((self.stage.width,
                                 self.stage.height), flags=pygame.SRCALPHA)

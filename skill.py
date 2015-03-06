@@ -618,6 +618,7 @@ class TileEffect(Skill):
         self.direction = creator.direction
         self.x_blit, self.y_blit = 0, 0
         self.field.tile[x][y].effects.append(self)
+        self.block = False
         self.ghost = False
     def target_area(self, tiles, friendly=True):
         targets = []

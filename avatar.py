@@ -43,12 +43,14 @@ class Avatar(pygame.sprite.Sprite):
             #Assumes that the first part has a line for every frame
             for line in sheet_map:
                 size=(int(line.split()[4]), int(line.split()[5]))
-                built.append(pygame.Surface(size, flags=SRCALPHA))
+                built.append(pygame.Surface(size))
+                built[-1].fill((124, 248, 0))
         for part in parts:
             sprite_part = res.unpack_sheet(part)
             for i in range(len(sprite_part)):
                 built[i].blit(sprite_part[i], (0,0))
-                built[i] = built[i].convert_alpha()
+                built[i] = built[i].convert()
+                built[i].set_colorkey((124, 248, 0))
         return built
 
 class Slayer(Avatar):
@@ -101,6 +103,8 @@ class ClayGolem(Avatar):
 class Kazan(Avatar):
     def __init__(self):
         super(Kazan, self).__init__(['ghostkhazan1'])
+        for image in self.images:
+            image.set_alpha(40)
         self.idle = Animation(frames = range(8), speed=0.12)
         self.play_animation(self.idle)
         self.height = 110
@@ -109,6 +113,8 @@ class Kazan(Avatar):
 class Bremen(Avatar):
     def __init__(self):
         super(Bremen, self).__init__(['ghostbremen1'])
+        for image in self.images:
+            image.set_alpha(40)
         self.idle = Animation(frames = range(8), speed=0.12)
         self.play_animation(self.idle)
         self.height = 110

@@ -1,9 +1,9 @@
-Battle control flow:
-If phase 0 or 1:
-If it's the player turn, show the skill buttons of the selected player and allow the turn indicator to mark all player characters as done
-If it's the player turn and phase 0, allow the selected player to move and change direction
-If all non-AI characters for the turn are done, run the ai, which does nothing if it's not their turn or it's the resolution phase, but marks themselves as done otherwise.
-If all AI characters for the turn are done, next_phase()
+Tooltips
+Show effects
+AI
+Bring back bounding rect transparency
+Location-based effects
+Effects that expire when their owner, whether it's a character or another location-based effect, no longer exists
 
 if phase 3:
 skills need to know what its combo is and where it is in its combo
