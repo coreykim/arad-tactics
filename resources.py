@@ -1,4 +1,5 @@
 import os, pygame
+import textwrap
 from pygame.locals import SRCALPHA
 
 class Resources(object):
@@ -51,7 +52,7 @@ class Resources(object):
         except pygame.error:
             print ('Cannot load music: %s' % fullname)
             raise SystemExit(str(geterror()))
-        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.set_volume(0.3)
         pygame.mixer.music.play(-1)
     def load_sound(self, name):
         """Generic function to load sounds in PyGame"""
@@ -65,6 +66,29 @@ class Resources(object):
         except pygame.error:
             print ('Cannot load sound: %s' % fullname)
             raise SystemExit(str(geterror()))
-        sound.set_volume(0.1)
+        sound.set_volume(0.2)
         return sound
+    def string2image(self, text, wraplength=200, fontsize=14,
+                    textcolor=(255, 255, 255), bgcolor=(0, 0, 0), 
+                    border=0):
+        '''Takes a list of strings and returns an image.'''
+        wraplength = int((wraplength)*1.7/fontsize)
+        wrapped_text = []
+        for line in text:
+            wrapped_text+=textwrap.wrap(line, wraplength)
+        line_images = []
+        fontpath = os.path.join(self.dir, "Code New Roman.otf")
+        font = pygame.font.Font(fontpath, fontsize)
+        max_length = 0
+        for line in wrapped_text:
+            line_images.append(font.render(line, 1, textcolor, bgcolor))
+            if len(line)>max_length:
+                max_length = len(line)
+        box_height = int(len(wrapped_text)*fontsize + border*2)
+        box_width = int(max_length/1.7*fontsize + border*2)
+        image = pygame.Surface((box_width, box_height))
+        image.fill(bgcolor)
+        for i, line in enumerate(wrapped_text):
+            image.blit(line_images[i], (border, int(border+i*fontsize)))
+        return image
 res = Resources()

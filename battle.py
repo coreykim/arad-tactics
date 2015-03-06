@@ -26,6 +26,8 @@ class Battle(object):
         self.enemy_panel = EnemyPanel(self)
         self.field = Field(self, 0, self.turn_indicator.rect.height,
                             10, 5, stage.Sewer)
+        self.message = ui.TextBox(0, self.turn_indicator.rect.height+self.field.rect.height,
+                        640, 480-self.turn_indicator.rect.height-self.field.rect.height, [' '])
         self.ui.add(self.player_panel, self.enemy_panel, self.turn_indicator,
                     self.field, PressAny(self))
         self.main.data[0].enter_field(0, 0, self.field)
@@ -33,10 +35,10 @@ class Battle(object):
                 avatar=avatar.Lugaru(), basestat=character.LugaruStat())
         monster2 = character.Character('Clay Golem',
                 avatar=avatar.ClayGolem(), basestat=character.ClayGolemStat())
-        monster1.enter_field(9, 2, self.field)
-        monster2.enter_field(9, 3, self.field)
+        monster1.enter_field(4, 1, self.field)
+        monster2.enter_field(4, 2, self.field)
+        self.select(monster1)
     def select(self, character):
-        print 'Selected '+character.name
         if character.player:
             self.player = character
             self.player_panel.character = character
@@ -50,8 +52,8 @@ class Battle(object):
         for button in self.skillbuttons:
             button.kill()
         self.skillbuttons = []
-        for i in range(len(self.main.data[0].skill)):
-            button = SkillButton(i, self.main.data[0].skill[i])
+        for i in range(len(character.skill)):
+            button = SkillButton(i, character.skill[i])
             self.ui.add(button)
             self.skillbuttons.append(button)
     def next_phase(self):
@@ -67,11 +69,16 @@ class Battle(object):
                     Skill.queue.append(character.queue)
                     #Funnel the combos into one list so we can sort them
                 character.queue = []
-            print Skill.queue
+            for button in self.skillbuttons:
+                button.kill()
+            self.skillbuttons = []
+            self.ui.add(self.message)
         elif self.phase == 3:
             #Tick down
             for character in self.field.characters:
                 character.every_turn()
+                if character.player == self.turn:
+                    character.every_own_turn()
             for tile in self.field.tiles:
                 expired_effects = []
                 for effect in tile.effects:
@@ -92,7 +99,7 @@ class Battle(object):
                 self.select(self.field.players[0])
         self.turn_indicator.render()
     def resolve(self):
-        self.message = []
+        self.message.text = []
         if Skill.active_action:
             Skill.active_action.affected_area = []
         if Skill.active_index==len(Skill.active_combo):
@@ -114,19 +121,22 @@ class Battle(object):
         if len(Skill.active_combo) > 0:
             Skill.active_action = Skill.active_combo[Skill.active_index]
             if Skill.active_action.owner.staggered:
-                self.message.append("{} is staggered!".format(Skill.active_action.owner.name))
+                self.message.text.append("{} is staggered!".format(Skill.active_action.owner.name))
                 Skill.active_index = len(Skill.active_combo)
             else:
                 if Skill.active_index == 0:
-                    self.message.append("{} uses {}!".format(Skill.active_action.owner.name,
+                    self.message.text.append("{} uses {}!".format(Skill.active_action.owner.name,
                         Skill.active_action.name))
                 else:
-                    self.message.append("{} combos into {}!".format(Skill.active_action.owner.name,
+                    self.message.text.append("{} combos into {}!".format(Skill.active_action.owner.name,
                         Skill.active_action.name))
                 Skill.active_action.do()
                 if Skill.active_action not in Skill.active_combo:
                     Skill.active_action.surprise_stagger = 0
                 Skill.active_index += 1
+        self.player_panel.render()
+        self.enemy_panel.render()
+        self.message.render()
     def draw(self):
         self.main.canvas.fill((20, 20, 20))
         self.ui.update()
@@ -168,6 +178,21 @@ class EnemyPanel(ui.Frame):
         self.image = pygame.Surface(self.rect.size)
         self.character = None
         super(EnemyPanel, self).__init__(self.rect, color=(240, 100, 100))
+    def render(self):
+        self.image.fill((20, 20, 20))
+        if self.character:
+            portrait = self.character.avatar.portrait
+            self.image.blit(pygame.transform.flip(portrait, 1, 0), (320-15-portrait.get_width(), 15))
+            font = res.load_font(14)
+            base = font.render(self.character.name, 0, (255, 255, 255), (20, 20, 20))
+            self.image.blit(base, (320-15-base.get_width(), 0))
+            health_empty = pygame.Rect(0, 15, 320-15-portrait.get_width(), 12)
+            self.image.fill((80, 80, 80), rect=health_empty)
+            health_full = pygame.Rect(int((320-15-portrait.get_width())*(1-self.character.hp/self.character.max_hp)), 15,
+                                    int((320-15-portrait.get_width())*(self.character.hp/self.character.max_hp)), 12)
+            self.image.fill((20, 220, 20), rect=health_full)
+            drive_empty = pygame.Rect(0, 28, 320-15-portrait.get_width(), 12)
+            self.image.fill((80, 80, 80), rect=drive_empty)
 
 class TurnIndicator(ui.Frame):
     def __init__(self, caller):
@@ -225,6 +250,7 @@ class Field(ui.Frame):
             y = int(min(self.stage.height, x*360/640))
             self.zoom_resolution.append((x, y))
         self.zoom = 0
+        self.moved = False
         self.render_gridlines()
         self.tile = [[Tile()
                 for row in range(rows)]
@@ -250,33 +276,40 @@ class Field(ui.Frame):
     def mousebuttonup(self, caller, event):
         if event.button==1:
             self.held = False
-            pos = event.pos
-            pos = (pos[0]*640/pygame.display.get_surface().get_width()*
-                    self.camera.width/self.rect.width+self.camera.left,
-                    (pos[1]*480/pygame.display.get_surface().get_height()
-                    -self.rect.top) * self.camera.width/self.rect.width
-                    +self.camera.top-self.horizon)
-            tile_y = pos[1]/self.grid_height
-            tile_x = (pos[0]-pos[1]*self.grid_tilt/self.grid_height)/self.grid_width
-            if 0<=tile_x<self.columns and 0<=tile_y<self.rows:
-                tile_x, tile_y = int(tile_x), int(tile_y)
-                if not self.is_blocked_at(tile_x, tile_y) and self.caller.phase==0 and self.caller.turn:
-                    if len(self.move_highlights)>0:
-                        self.caller.player.move(tile_x, tile_y)
-                        self.move_highlights = []
-                    else:
-                        self.move_highlights += self.caller.player.movement_area()
-                elif ((tile_x, tile_y) == (self.caller.player.x, self.caller.player.y)
-                                        and self.caller.phase==0):
-                    self.caller.player.direction = -self.caller.player.direction
+            if not self.moved and not self.caller.phase==2:
+                pos = event.pos
+                pos = (pos[0]*640/pygame.display.get_surface().get_width()*
+                        self.camera.width/self.rect.width+self.camera.left,
+                        (pos[1]*480/pygame.display.get_surface().get_height()
+                        -self.rect.top) * self.camera.width/self.rect.width
+                        +self.camera.top-self.horizon)
+                tile_y = pos[1]/self.grid_height
+                tile_x = (pos[0]-pos[1]*self.grid_tilt/self.grid_height)/self.grid_width
+                if 0<=tile_x<self.columns and 0<=tile_y<self.rows:
+                    tile_x, tile_y = int(tile_x), int(tile_y)
+                    if not self.is_blocked_at(tile_x, tile_y) and self.caller.phase==0 and self.caller.turn:
+                        if len(self.move_highlights)>0:
+                            self.caller.player.move(tile_x, tile_y)
+                            self.move_highlights = []
+                        else:
+                            self.move_highlights += self.caller.player.movement_area()
+                    elif ((tile_x, tile_y) == (self.caller.player.x, self.caller.player.y)
+                                            and self.caller.phase==0):
+                        self.caller.player.direction = -self.caller.player.direction
+                    elif len(self.tile[tile_x][tile_y].occupant)>0:
+                        for character in self.tile[tile_x][tile_y].occupant:
+                            self.caller.select(character)
+        self.moved = False
     def mousemotion(self, caller, event):
         self.active = True
         if self.held:
             dx, dy = event.rel
-            dx = -int(0.5+dx*self.camera.width/self.rect.width)
-            new_x = max(self.camera.left + dx, 0)
-            new_x = min(new_x, self.stage.width-self.camera.width)
-            self.camera.left = new_x
+            if not (dx, dy) == (0, 0):
+                dx = -int(0.5+dx*self.camera.width/self.rect.width)
+                new_x = max(self.camera.left + dx, 0)
+                new_x = min(new_x, self.stage.width-self.camera.width)
+                self.camera.left = new_x
+                self.moved = True
     def change_zoom(self, amount):
         self.zoom += amount
         self.camera.width = int(self.zoom_resolution[self.zoom][0])

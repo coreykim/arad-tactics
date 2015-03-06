@@ -76,9 +76,9 @@ class Character(object):
                 expired_effects.append(effect)
         for effect in expired_effects:
             self.lose_effect(effect)
+    def every_own_turn(self):
         for skill in self.skill:
             skill.tick()
-        self.staggered = False
     def enter_field(self, x, y, field, direction=None):
         if not field.is_blocked_at(x, y):
             self.field = field
@@ -128,10 +128,17 @@ class Character(object):
     def take_damage(self, damage):
         if damage > 0:
             self.hp -= damage
+            if self.avatar.hit1:
+                self.avatar.play_animation(self.avatar.hit1)
         if self.hp <= 0 and self.dead == False:
             self.die()
     def die(self):
-        pass
+        self.field.tile[self.x][self.y].occupant.remove(self)
+        self.field.characters.remove(self)
+        if self.player:
+            self.field.players.remove(self)
+        else:
+            self.field.enemies.remove(self)
     def change_pos(self, dx, dy):
         '''self.field must be defined'''
         #Clamp movement to prevent going off the map

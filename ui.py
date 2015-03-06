@@ -82,6 +82,19 @@ class TextLine(Frame):
     def render(self):
         self.image = outlined_text(self.text)
 
+class TextBox(Frame):
+    def __init__(self, x, y, width, height, text):
+        self.text = text
+        rect = pygame.Rect(x, y, width, height)
+        super(TextBox, self).__init__(rect)
+    def render(self):
+        text = res.string2image(self.text, wraplength = self.rect.width-8,
+                                bgcolor = (20, 20, 20), border = 4)
+        self.image = pygame.Surface(self.rect.size)
+        self.image.fill((20, 20, 20))
+        self.image.blit(text, (0, 0))
+        
+
 class TextSelection(Frame):
     def __init__(self, x, y, option):
         self.selection = option[0]

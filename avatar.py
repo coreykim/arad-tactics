@@ -96,7 +96,7 @@ class ClayGolem(Avatar):
         self.play_animation(self.idle)
         self.height = 150
         self.center = 130, 205
-        self.portrait = res.unpack_sheet('monsterface')[12]
+        self.portrait = res.unpack_sheet('monsterface')[22]
 
 class Kazan(Avatar):
     def __init__(self):
