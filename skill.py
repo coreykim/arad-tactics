@@ -67,14 +67,14 @@ class Skill(object):
         if self.timer > 0:
             return False
         return True
-    def calculate_priority(self, pos = None):
+    def calculate_priority(self, phase = 0, pos = None):
         '''Find the number of valid targets to calculate priority of attack, for AI purposes.'''
         '''Optional arguments allow calculations for positions that we're not actually at.'''
         if pos:
             origin_x, origin_y = pos[0], pos[1]
         else:
             origin_x, origin_y = self.owner.x, self.owner.y
-        if Combat.phase == "reaction":
+        if phase == "reaction":
             directions = [self.owner.direction]
         else:
             directions = [1, -1]
@@ -88,7 +88,7 @@ class Skill(object):
                             targets[i] += 1.0
                             if (x - origin_x)*occupant.direction > 0: #if this is a back attack
                                 targets[i] += 0.5
-        if Combat.phase == "reaction":
+        if phase == "reaction":
             return targets[0]*self.ai_priority, self.owner.direction
         else:
             #Compare forward versus backward aiming priority
@@ -119,13 +119,6 @@ class Skill(object):
         else:
             return targets
     #Targeting functions
-    def tiles_in_radius(self, center_x, center_y, radius):
-        tiles = []
-        for x in range(self.owner.field.columns):
-            for y in range(self.owner.field.rows):
-                if abs(x-center_x)+abs(y-center_y)<=radius:
-                    tiles.append((x, y))
-        return tiles
     def target_area(self, tiles, friendlies=False, enemies=True):
         targets = []
         for tile in tiles:
@@ -245,7 +238,7 @@ class Skill(object):
     def apply_effect(self, targets, effect, duration=3):
         for target in targets:
             if not target.dead:
-                target.gain_effect(effect, duration=duration)
+                target.gain_effect(effect, source=self.owner, duration=duration)
     def tick(self):
         self.used = 0
 class Swing(Skill):
@@ -491,7 +484,7 @@ class Unshackle(Special):
     def do(self):
         tiles = self.tiles_in_radius(self.owner.x, self.owner.y, 1)
         for tile in tiles:
-            tile = self.field.tile[tile[0]][tile[1]]
+            tile = self.owner.field.tile[tile[0]][tile[1]]
             for effect in tile.effects:
                 if effect.ghost and effect.player==self.owner.player:
                     print "Buffed {}".format(effect.name)
@@ -512,15 +505,12 @@ class Retreat(Special):
         return
 
 class Effect(object):
-    def __init__(self, name, duration, icon=None, id_name=None, duration_stacking=False):
+    def __init__(self, name, duration, source=None, id_name=None, duration_stacking=False):
         self.name = name
         self.owner = None
+        self.source = source
         self.duration = duration
         self.duration_stacking = duration_stacking
-        if icon:
-            self.icon=icon
-        else:
-            self.icon=self.name[:2]
         if id_name:
             self.id_name=id_name
         else:
@@ -537,6 +527,7 @@ class Effect(object):
         self.owner = existing_effect.owner
         existing_effect.owner.effects.append(self)
 class E_Guard(Effect):
+    icon = res.unpack_sheet('status_icon')[3]
     def __init__(self, duration, extras):
         Effect.__init__(self, "Guard", duration)
     def get_desc_body(self):
@@ -546,6 +537,7 @@ class E_Guard(Effect):
             damage = damage*0.25
         return damage, stagger
 class E_Dodge(Effect):
+    icon = res.unpack_sheet('status_icon')[54]
     def __init__(self, duration, extras):
         Effect.__init__(self, "Dodge", duration)
         self.dodge_count = 0
@@ -560,8 +552,9 @@ class E_Dodge(Effect):
             self.dodge_count += 2
         return damage, stagger
 class E_KazanWrath(Effect):
+    icon = res.unpack_sheet('status_icon')[1]
     def __init__(self, duration, extras):
-        Effect.__init__(self, "Kazan's Wrath", duration, icon="KW")
+        Effect.__init__(self, "Kazan's Wrath", duration)
         self.amount = extras['amount']
     def get_desc_body(self):
         return (["Damage is increased by {}%. ".format(int(self.amount*100))])
@@ -574,8 +567,9 @@ class E_KazanWrath(Effect):
         if existing_effect.duration<self.duration:
             existing_effect.duration=self.duration
 class E_BremenHaze(Effect):
+    icon = res.unpack_sheet('status_icon')[7]
     def __init__(self, duration, extras):
-        Effect.__init__(self, "Bremen's Haze", duration, icon="BH")
+        Effect.__init__(self, "Bremen's Haze", duration)
         self.amount = extras['amount']
     def get_desc_body(self):
         return (["Resistance is decreased by {}%. ".format(int(self.amount*100))])
@@ -588,24 +582,25 @@ class E_BremenHaze(Effect):
         if existing_effect.duration<self.duration:
             existing_effect.duration=self.duration
 class E_AcidBurn(Effect):
+    icon = res.unpack_sheet('status_icon')[21]
     def __init__(self, duration, extras):
-        Effect.__init__(self, "Acid Burn", duration, icon="AB", duration_stacking=True)
+        Effect.__init__(self, "Acid Burn", duration, duration_stacking=True)
     def get_desc_body(self):
         return (["Take 10 damage each turn. "])
     def tick(self):
         self.owner.take_damage(10)
 
 class TileEffect(Skill):
-    def __init__(self, name, x, y, creator, duration=1, avatar=None, stacking=True):
+    def __init__(self, name, x, y, source, duration=1, avatar=None, stacking=True):
         self.name = name
         self.duration = duration
         self.avatar = avatar
         if self.avatar:
             self.avatar.owner = self
         self.stacking = stacking
-        self.owner = creator
-        self.player = creator.player
-        self.field = creator.field
+        self.source = source
+        self.player = source.player
+        self.field = source.field
         self.x, self.y = x, y
         if x < 0:
             self.x = 0
@@ -615,11 +610,18 @@ class TileEffect(Skill):
             self.y = 0
         if y > self.field.rows-1:
             self.y = self.field.rows-1
-        self.direction = creator.direction
+        self.direction = source.direction
         self.x_blit, self.y_blit = 0, 0
         self.field.tile[x][y].effects.append(self)
         self.block = False
         self.ghost = False
+    def tiles_in_radius(self, center_x, center_y, radius):
+        tiles = []
+        for x in range(self.field.columns):
+            for y in range(self.field.rows):
+                if abs(x-center_x)+abs(y-center_y)<=radius:
+                    tiles.append((x, y))
+        return tiles
     def target_area(self, tiles, friendly=True):
         targets = []
         for tile in tiles:

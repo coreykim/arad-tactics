@@ -22,8 +22,10 @@ class Battle(object):
         self.skillbuttons = []
         self.turn_indicator = TurnIndicator(self)
         self.player_panel = PlayerPanel(self)
-        self.select(self.main.data[0])
         self.enemy_panel = EnemyPanel(self)
+        self.player_effects = []
+        self.enemy_effects = []
+        self.select(self.main.data[0])
         self.field = Field(self, 0, self.turn_indicator.rect.height,
                             10, 5, stage.Sewer)
         self.message = ui.TextBox(0, self.turn_indicator.rect.height+self.field.rect.height,
@@ -48,6 +50,7 @@ class Battle(object):
             self.enemy = character
             self.enemy_panel.character = character
             self.enemy_panel.render()
+        self.make_effect_icons(character)
     def make_skill_buttons(self, character):
         for button in self.skillbuttons:
             button.kill()
@@ -56,6 +59,23 @@ class Battle(object):
             button = SkillButton(i, character.skill[i])
             self.ui.add(button)
             self.skillbuttons.append(button)
+    def make_effect_icons(self, character):
+        if character.player:
+            for effect in self.player_effects:
+                effect.kill()
+            self.player_effects = []
+            for i in range(len(character.effects)):
+                icon = EffectIcon(i, character.effects[i])
+                self.ui.add(icon)
+                self.player_effects.append(icon)
+        else:
+            for effect in self.enemy_effects:
+                effect.kill()
+            self.enemy_effects = []
+            for i in range(len(character.effects)):
+                icon = EffectIcon(i, character.effects[i])
+                self.ui.add(icon)
+                self.enemy_effects.append(icon)
     def next_phase(self):
         self.phase += 1
         self.field.move_highlights = []
@@ -296,6 +316,7 @@ class Field(ui.Frame):
                     elif ((tile_x, tile_y) == (self.caller.player.x, self.caller.player.y)
                                             and self.caller.phase==0):
                         self.caller.player.direction = -self.caller.player.direction
+                        self.caller.select(self.caller.player)
                     elif len(self.tile[tile_x][tile_y].occupant)>0:
                         for character in self.tile[tile_x][tile_y].occupant:
                             self.caller.select(character)
@@ -438,6 +459,21 @@ class SkillButton(ui.Frame):
         self.skill.add_to_queue()
         for button in caller.skillbuttons:
             button.render()
+        caller.make_effect_icons(caller.player)
+        caller.make_effect_icons(caller.enemy)
+
+class EffectIcon(ui.Frame):
+    def __init__(self, i, effect):
+        self.image = effect.icon
+        if effect.owner.player:
+            x = 1+(effect.icon.get_width()+1)*(i%15)
+        else:
+            x = 640-1-effect.icon.get_width()-(effect.icon.get_width()+1)*(i%15)
+        y = 43+(effect.icon.get_height()+1)*int(i/15)
+        rect = pygame.Rect(x, y, effect.icon.get_width(), effect.icon.get_height())
+        super(EffectIcon, self).__init__(rect)
+    def render(self):
+        pass
 
 class PressAny(ui.Frame):
     def __init__(self, caller):

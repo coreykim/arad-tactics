@@ -94,8 +94,6 @@ class Character(object):
                 else:
                     self.direction = -1
             self.x, self.y = x, y
-            for skill in self.skill:
-                skill.field = self.field
     def learn_skill(self, SkillClass):
         skill = SkillClass()
         skill.owner = self

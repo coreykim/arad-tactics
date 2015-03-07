@@ -1,14 +1,9 @@
+AI
 Tooltips
 Show effects
-AI
 Bring back bounding rect transparency
 Location-based effects
-Effects that expire when their owner, whether it's a character or another location-based effect, no longer exists
-
-if phase 3:
-skills need to know what its combo is and where it is in its combo
-battle() can hold the active action as a local variable that it doesn't need to remember for more than one run()
-If we've received mousebuttondown input, resolve() one action
+Effects that expire when their source, whether it's a character or another location-based effect, no longer exists
 
 
 Skill points:
