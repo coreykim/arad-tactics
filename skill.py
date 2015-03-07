@@ -505,7 +505,7 @@ class Retreat(Special):
         return
 
 class Effect(object):
-    def __init__(self, name, duration, source=None, id_name=None, duration_stacking=False):
+    def __init__(self, name, duration=None, source=None, id_name=None, duration_stacking=False):
         self.name = name
         self.owner = None
         self.source = source
@@ -515,6 +515,11 @@ class Effect(object):
             self.id_name=id_name
         else:
             self.id_name=self.name
+    def get_desc_header(self):
+        text = [self.name]
+        if self.duration:
+            text += ['Duration: {}'.format(self.duration)]
+        return text
     def get_desc_body(self):
         return []
     def tick(self):

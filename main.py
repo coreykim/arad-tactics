@@ -10,6 +10,7 @@ class Main(object):
         self.clock = pygame.time.Clock()
         self.data = None
         self.routine = title.Title(self)
+        self.mouse_stationary_time = 0
         self.quit = False
     def draw(self):
         if self.canvas.get_rect() != pygame.display.get_surface().get_rect():
@@ -28,12 +29,13 @@ class Main(object):
                 self.screen=pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
             elif event.type in [pygame.MOUSEMOTION, pygame.MOUSEBUTTONUP,
                                 pygame.MOUSEBUTTONDOWN]:
+                self.mouse_stationary_time = 0
                 pos = event.pos
                 pos = (pos[0]*640/pygame.display.get_surface().get_width(),
                         pos[1]*480/pygame.display.get_surface().get_height())
                 for sprite in self.routine.ui.sprites():
                     if sprite.rect.collidepoint(pos):
-                        sprite.input(event, self.routine)
+                        sprite.input(self.routine, event)
                     elif sprite.active:
                         sprite.active = False
                         sprite.held = False
@@ -45,5 +47,9 @@ class Main(object):
             self.event_handler()
             self.routine.run()
             self.draw()
+            self.mouse_stationary_time += 1
+            if self.mouse_stationary_time == 30:
+                for sprite in self.routine.ui.sprites():
+                    if sprite.active:
+                        sprite.mousestay(self.routine)
             self.clock.tick(30)
-            #print 1000/(self.clock.get_fps()+0.1)

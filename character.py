@@ -63,6 +63,7 @@ class Character(object):
             self.speed = self.basestat.speed
             self.movement = self.basestat.movement
             self.drive = 0
+            self.max_drive = self.basestat.drive
     def every_turn(self):
         self.moved = False #Disables further movement and postmove
         self.staggered = False #Disables actions in queue from resolving
@@ -71,9 +72,10 @@ class Character(object):
         expired_effects = []
         for effect in self.effects:
             effect.tick()
-            effect.duration -= 1
-            if effect.duration <= 0:
-                expired_effects.append(effect)
+            if effect.duration:
+                effect.duration -= 1
+                if effect.duration <= 0:
+                    expired_effects.append(effect)
         for effect in expired_effects:
             self.lose_effect(effect)
     def every_own_turn(self):

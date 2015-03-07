@@ -68,7 +68,7 @@ class Resources(object):
             raise SystemExit(str(geterror()))
         sound.set_volume(0.2)
         return sound
-    def string2image(self, text, wraplength=200, fontsize=14,
+    def string2image(self, text, wraplength=400, fontsize=14,
                     textcolor=(255, 255, 255), bgcolor=(0, 0, 0), 
                     border=0):
         '''Takes a list of strings and returns an image.'''

@@ -20,6 +20,7 @@ class Battle(object):
         self.turn = True #True for player, False for enemy
         self.phase = 0
         self.skillbuttons = []
+        self.tooltip = None
         self.turn_indicator = TurnIndicator(self)
         self.player_panel = PlayerPanel(self)
         self.enemy_panel = EnemyPanel(self)
@@ -161,6 +162,18 @@ class Battle(object):
         self.main.canvas.fill((20, 20, 20))
         self.ui.update()
         self.ui.draw(self.main.canvas)
+        if self.tooltip:
+            pos = pygame.mouse.get_pos()
+            pos = (pos[0]*640/pygame.display.get_surface().get_width(),
+                    pos[1]*480/pygame.display.get_surface().get_height())
+            x_blit, y_blit = pos[0], pos[1]
+            if pos[0]>320:
+                x_blit -= self.tooltip.get_width()
+            if pos[1]>240:
+                y_blit -= self.tooltip.get_height()
+            else:
+                y_blit += 15
+            self.main.canvas.blit(self.tooltip, (x_blit, y_blit))
     def run(self):
         self.draw()
         if self.event:
@@ -184,13 +197,24 @@ class PlayerPanel(ui.Frame):
             font = res.load_font(14)
             base = font.render(self.character.name, 0, (255, 255, 255), (20, 20, 20))
             self.image.blit(base, (0, 0))
-            health_empty = pygame.Rect(27, 15, 320-16-27, 12)
-            self.image.fill((80, 80, 80), rect=health_empty)
+            self.health_empty = pygame.Rect(27, 15, 320-16-27, 12)
+            self.image.fill((80, 80, 80), rect=self.health_empty)
             health_full = pygame.Rect(27, 15, int((320-16-27)*
                             self.character.hp/self.character.max_hp), 12)
-            self.image.fill((20, 220, 20), rect=health_empty)
-            drive_empty = pygame.Rect(27, 28, 320-16-27, 12)
-            self.image.fill((80, 80, 80), rect=drive_empty)
+            self.image.fill((20, 220, 20), rect=health_full)
+            self.drive_empty = pygame.Rect(27, 28, 320-16-27, 12)
+            self.image.fill((80, 80, 80), rect=self.drive_empty)
+    def mousestay(self, caller):
+        if self.character:
+            pos = pygame.mouse.get_pos()
+            pos = (pos[0]*640/pygame.display.get_surface().get_width(),
+                    pos[1]*480/pygame.display.get_surface().get_height())
+            if self.health_empty.collidepoint(pos):
+                caller.tooltip = res.string2image([
+                    "HP: {}/{}".format(self.character.hp, self.character.max_hp)])
+            elif self.drive_empty.collidepoint(pos):
+                caller.tooltip = res.string2image([
+                    "Drive: {}/{}".format(self.character.drive, self.character.max_drive)])
         
 class EnemyPanel(ui.Frame):
     def __init__(self, caller):
@@ -206,13 +230,25 @@ class EnemyPanel(ui.Frame):
             font = res.load_font(14)
             base = font.render(self.character.name, 0, (255, 255, 255), (20, 20, 20))
             self.image.blit(base, (320-15-base.get_width(), 0))
-            health_empty = pygame.Rect(0, 15, 320-15-portrait.get_width(), 12)
-            self.image.fill((80, 80, 80), rect=health_empty)
+            self.health_empty = pygame.Rect(0, 15, 320-15-portrait.get_width(), 12)
+            self.image.fill((80, 80, 80), rect=self.health_empty)
             health_full = pygame.Rect(int((320-15-portrait.get_width())*(1-self.character.hp/self.character.max_hp)), 15,
                                     int((320-15-portrait.get_width())*(self.character.hp/self.character.max_hp)), 12)
             self.image.fill((20, 220, 20), rect=health_full)
-            drive_empty = pygame.Rect(0, 28, 320-15-portrait.get_width(), 12)
-            self.image.fill((80, 80, 80), rect=drive_empty)
+            self.drive_empty = pygame.Rect(0, 28, 320-15-portrait.get_width(), 12)
+            self.image.fill((80, 80, 80), rect=self.drive_empty)
+    def mousestay(self, caller):
+        if self.character:
+            pos = pygame.mouse.get_pos()
+            pos = (pos[0]*640/pygame.display.get_surface().get_width(),
+                    pos[1]*480/pygame.display.get_surface().get_height())
+            if self.health_empty.collidepoint(pos):
+                caller.tooltip = res.string2image([
+                    "HP: {}/{}".format(self.character.hp, self.character.max_hp)])
+            elif self.drive_empty.collidepoint(pos):
+                caller.tooltip = res.string2image([
+                    "Drive: {}/{}".format(self.character.drive, self.character.max_drive)])
+
 
 class TurnIndicator(ui.Frame):
     def __init__(self, caller):
@@ -243,6 +279,18 @@ class TurnIndicator(ui.Frame):
     def mousebuttondown(self, caller, event):
         if event.button==1 and self.caller.phase!=2 and self.caller.turn:
             self.caller.next_phase()
+    def mousestay(self, caller):
+        if caller.phase == 0 and caller.turn:
+            text = ['Player Action Phase']
+        elif caller.phase == 1 and not caller.turn:
+            text = ['Enemy Reaction Phase']
+        elif caller.phase == 0 and not caller.turn:
+            text = ['Enemy Action Phase']
+        elif caller.phase == 1 and caller.turn:
+            text = ['Player Reaction Phase']
+        else:
+            text = ['Resolution Phase']
+        caller.tooltip = res.string2image(text)
 
 class Tile(object):
     def __init__(self):
@@ -461,10 +509,14 @@ class SkillButton(ui.Frame):
             button.render()
         caller.make_effect_icons(caller.player)
         caller.make_effect_icons(caller.enemy)
+    def mousestay(self, caller):
+        caller.tooltip = res.string2image(self.skill.get_desc_header()+self.skill.get_desc_body())
 
 class EffectIcon(ui.Frame):
     def __init__(self, i, effect):
         self.image = effect.icon
+        self.tooltip = res.string2image(effect.get_desc_header()
+                                        +effect.get_desc_body())
         if effect.owner.player:
             x = 1+(effect.icon.get_width()+1)*(i%15)
         else:
@@ -474,6 +526,8 @@ class EffectIcon(ui.Frame):
         super(EffectIcon, self).__init__(rect)
     def render(self):
         pass
+    def mousestay(self, caller):
+        caller.tooltip = self.tooltip
 
 class PressAny(ui.Frame):
     def __init__(self, caller):
@@ -482,3 +536,5 @@ class PressAny(ui.Frame):
         self.image = pygame.Surface((0, 0))
     def mousebuttondown(self, caller, event):
         self.caller.event = event
+    def mousemotion(self, caller, event):
+        self.caller.tooltip = None

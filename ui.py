@@ -33,7 +33,7 @@ class Frame(pygame.sprite.Sprite):
         self.image = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         if self.color:
             self.image.fill(self.color)
-    def input(self, event, caller):
+    def input(self, caller, event):
         if event.type==pygame.MOUSEMOTION:
             self.mousemotion(caller, event)
         elif event.type==pygame.MOUSEBUTTONDOWN:
@@ -46,6 +46,8 @@ class Frame(pygame.sprite.Sprite):
     def mousebuttondown(self, caller, event):
         pass
     def mousebuttonup(self, caller, event):
+        pass
+    def mousestay(self, caller):
         pass
     def lose_focus(self):
         self.render()
