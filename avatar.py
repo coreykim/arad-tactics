@@ -69,9 +69,9 @@ class Fighter(Avatar):
     def __init__(self):
         super(Fighter, self).__init__(['default_fighter'])
         self.idle = Animation(frames = range(132, 136), speed=0.15)
-        self.attack1 = Animation(frames = range(30, 37), speed=0.4)
+        self.attack1 = Animation(frames = range(30, 36), speed=0.4)
         self.attack2 = Animation(frames = range(65, 71), speed=0.4)
-        self.cast1 = Animation(frames = range(92, 95), speed=0.4)
+        self.cast1 = Animation(frames = range(92, 95)+range(93, 95), speed=0.4)
         self.hit1 = Animation(frames = range(76, 78), speed=0.12)
         self.play_animation(self.idle)
         self.height = 120

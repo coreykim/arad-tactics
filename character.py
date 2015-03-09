@@ -4,6 +4,7 @@ import random
 import math
 from resources import res
 import skill
+import ui
 
 class Character(object):
     def __init__(self, name, job="monster", avatar=None, basestat=None, player=False):
@@ -108,6 +109,21 @@ class Character(object):
         self.effects.remove(effect)
     def take_damage(self, damage):
         if damage > 0:
+            class DamageNumber(object):
+                def __init__(self, amount, x, y, height):
+                    self.image = ui.outlined_text(str(int(amount)))
+                    self.x = x
+                    self.y = y
+                    self.height = height
+                    self.frame = 0
+                    self.alpha = 254
+                    self.image.set_alpha(self.alpha)
+                def update(self):
+                    self.frame += 1
+                    self.height += 0.8
+                    self.alpha -= 10
+                    self.image.set_alpha(self.alpha)
+            self.field.damage_numbers.append(DamageNumber(damage, self.x, self.y, self.avatar.height))
             self.hp -= damage
             if self.avatar.hit1:
                 self.avatar.play_animation(self.avatar.hit1)

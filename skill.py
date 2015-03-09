@@ -125,8 +125,8 @@ class Skill(object):
     #Targeting functions
     def tiles_in_radius(self, center_x, center_y, radius):
         tiles = []
-        for x in range(self.field.columns):
-            for y in range(self.field.rows):
+        for x in range(self.owner.field.columns):
+            for y in range(self.owner.field.rows):
                 if abs(x-center_x)+abs(y-center_y)<=radius:
                     tiles.append((x, y))
         return tiles
@@ -577,11 +577,11 @@ class E_KazanWrath(Effect):
     def outgoing_damage(self, damage, stagger, attack, target):
         damage = damage*(1+self.amount)
         return damage, stagger
-    def merge(self, existing_effect):
-        if existing_effect.amount<self.amount:
-            existing_effect.amount=self.amount
-        if existing_effect.duration<self.duration:
-            existing_effect.duration=self.duration
+    def merge(self, new):
+        if self.amount<new.amount:
+            self.amount=new.amount
+        if self.duration<new.duration:
+            self.duration=new.duration
 class E_BremenHaze(Effect):
     icon = res.unpack_sheet('status_icon')[7]
     def __init__(self, duration, extras):
@@ -592,11 +592,11 @@ class E_BremenHaze(Effect):
     def incoming_damage(self, damage, stagger, attack):
         damage = damage*(1+self.amount)
         return damage, stagger
-    def merge(self, existing_effect):
-        if existing_effect.amount<self.amount:
-            existing_effect.amount=self.amount
-        if existing_effect.duration<self.duration:
-            existing_effect.duration=self.duration
+    def merge(self, new):
+        if self.amount<new.amount:
+            self.amount=new.amount
+        if self.duration<new.duration:
+            self.duration=new.duration
 class E_AcidBurn(Effect):
     icon = res.unpack_sheet('status_icon')[21]
     def __init__(self, duration, extras):
@@ -631,6 +631,13 @@ class TileEffect(Skill):
         self.field.tile[x][y].effects.append(self)
         self.block = False
         self.ghost = False
+    def tiles_in_radius(self, center_x, center_y, radius):
+        tiles = []
+        for x in range(self.field.columns):
+            for y in range(self.field.rows):
+                if abs(x-center_x)+abs(y-center_y)<=radius:
+                    tiles.append((x, y))
+        return tiles
     def target_area(self, tiles, friendly=True):
         targets = []
         for tile in tiles:

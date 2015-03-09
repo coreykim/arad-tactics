@@ -374,6 +374,7 @@ class Field(ui.Frame):
         self.move_highlights = []
         self.white_highlight = self.draw_highlight((200, 200, 200))
         self.yellow_highlight = self.draw_highlight((200, 200, 20))
+        self.damage_numbers = []
         super(Field, self).__init__(self.rect)
         self.characters = []
         self.players = []
@@ -436,6 +437,10 @@ class Field(ui.Frame):
         for tile in self.tiles:
             for effect in tile.effects:
                 effect.avatar.update()
+        for number in self.damage_numbers:
+            number.update()
+            if number.frame > 20:
+                self.damage_numbers.remove(number)
         self.render()
     def render(self):
         self.canvas = self.stage.static.copy()
@@ -447,6 +452,7 @@ class Field(ui.Frame):
             self.canvas.set_clip(self.camera)
         self.render_highlights()
         self.render_occupants()
+        self.render_damage_numbers()
         self.subcanvas = pygame.Surface((self.camera.width, self.camera.height))
         self.subcanvas.blit(self.canvas, (0,0), area=self.camera)
         self.subcanvas = pygame.transform.smoothscale(self.subcanvas, (
@@ -502,6 +508,14 @@ class Field(ui.Frame):
                 x = self.grid_tilt*tile[1]+self.grid_width*tile[0]
                 y = self.horizon+self.grid_height*tile[1]
                 self.canvas.blit(self.white_highlight, (x, y))
+    def render_damage_numbers(self):
+        for number in self.damage_numbers:
+            x_blit = ((number.x+0.5)*self.grid_width+
+                    (number.y+0.5)*self.grid_tilt)
+            y_blit = self.horizon+(number.y+0.5)*self.grid_height-number.height+8
+            self.canvas.blit(number.image,
+                (int(x_blit-number.image.get_width()/2),
+                int(y_blit-number.image.get_height()/2)))
     def draw_highlight(self, color): #Run this in init() once per color that we want to have and save it
         highlight = pygame.Surface((self.grid_width+self.grid_tilt, self.grid_height+1))
         pointlist = [(1, 1), #Upper left
@@ -560,6 +574,8 @@ class SkillButton(ui.Frame):
             button.render()
         caller.make_effect_icons(caller.player)
         caller.make_effect_icons(caller.enemy)
+        caller.player_panel.render()
+        caller.enemy_panel.render()
         caller.pass_select()
     def mousestay(self, caller):
         caller.tooltip = res.string2image(self.skill.get_desc_header()+self.skill.get_desc_body())
