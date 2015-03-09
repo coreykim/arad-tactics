@@ -71,7 +71,7 @@ class Battle(object):
             button.kill()
         self.skillbuttons = []
         for i in range(len(character.skill)):
-            button = SkillButton(i, character.skill[i])
+            button = SkillButton(i, character.skill[i], self)
             self.ui.add(button)
             self.skillbuttons.append(button)
     def make_effect_icons(self, character):
@@ -94,10 +94,20 @@ class Battle(object):
     def next_phase(self):
         self.field.phase += 1
         self.field.move_highlights = []
+        self.field.skill_highlights = []
+        self.field.preview_highlights = []
         if self.field.phase == 1:
             self.field.turn = not self.field.turn
             if self.field.turn and len(self.field.players)>0:
                 self.select(self.field.players[0])
+                for enemy in self.field.enemies:
+                    for action in enemy.queue:
+                        for tile in action.preview_area:
+                            x, y = enemy.x+tile[0]*enemy.direction, enemy.y+tile[1]
+                            if ((x, y) not in self.field.skill_highlights and
+                                            x in range(self.field.columns) and
+                                            y in range(self.field.rows)):
+                                self.field.skill_highlights.append((x, y))
             self.run_ai()
         elif self.field.phase == 2:
             for character in self.field.characters:
@@ -372,6 +382,8 @@ class Field(ui.Frame):
             for tile in column:
                 self.tiles.append(tile)
         self.move_highlights = []
+        self.skill_highlights = []
+        self.preview_highlights = []
         self.white_highlight = self.draw_highlight((200, 200, 200))
         self.yellow_highlight = self.draw_highlight((200, 200, 20))
         self.damage_numbers = []
@@ -503,11 +515,17 @@ class Field(ui.Frame):
     def render_highlights(self):
         overlay = pygame.Surface((self.stage.width,
                                 self.stage.height), flags=pygame.SRCALPHA)
+        highlights, image = [], None
         if len(self.move_highlights)>0:
-            for tile in self.move_highlights:
-                x = self.grid_tilt*tile[1]+self.grid_width*tile[0]
-                y = self.horizon+self.grid_height*tile[1]
-                self.canvas.blit(self.white_highlight, (x, y))
+            highlights, image = self.move_highlights, self.white_highlight
+        elif len(self.preview_highlights)>0:
+            highlights, image = self.preview_highlights, self.yellow_highlight
+        elif len(self.skill_highlights)>0:
+            highlights, image = self.skill_highlights, self.yellow_highlight
+        for tile in highlights:
+            x = self.grid_tilt*tile[1]+self.grid_width*tile[0]
+            y = self.horizon+self.grid_height*tile[1]
+            self.canvas.blit(image, (x, y))
     def render_damage_numbers(self):
         for number in self.damage_numbers:
             x_blit = ((number.x+0.5)*self.grid_width+
@@ -552,8 +570,9 @@ class Field(ui.Frame):
             return self.tile[x][y].occupant
 
 class SkillButton(ui.Frame):
-    def __init__(self, i, skill):
+    def __init__(self, i, skill, caller):
         self.skill = skill
+        self.caller = caller
         x = 1+(self.skill.icon.get_width()+2)*(i%5)
         y = 402+1+(self.skill.icon.get_height()+2)*int(i/5)
         rect = pygame.Rect(x, y, self.skill.icon.get_width()+2,
@@ -577,6 +596,20 @@ class SkillButton(ui.Frame):
         caller.player_panel.render()
         caller.enemy_panel.render()
         caller.pass_select()
+    def mousemotion(self, caller, event):
+        self.active = True
+        self.render()
+        if self.skill.pre_use():
+            preview = []
+            for tile in self.skill.preview_area:
+                x = self.skill.owner.x+tile[0]*self.skill.owner.direction
+                y = self.skill.owner.y+tile[1]
+                if x in range(caller.field.columns) and y in range(caller.field.rows):
+                    preview.append((x, y))
+            caller.field.preview_highlights = preview
+    def lose_focus(self):
+        self.render()
+        self.caller.field.preview_highlights = []
     def mousestay(self, caller):
         caller.tooltip = res.string2image(self.skill.get_desc_header()+self.skill.get_desc_body())
 

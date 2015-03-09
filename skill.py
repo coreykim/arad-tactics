@@ -427,9 +427,9 @@ class AcidVomit(Skill):
         self.apply_effect(damaged, E_AcidBurn, duration=3)
 
 class Special(Skill):
-    def __init__(self, name, cooldown=0, drive_requirement=0, drive_cost=0):
+    def __init__(self, name, cooldown=0, drive_requirement=0, drive_cost=0, preview_area=[]):
         Skill.__init__(self, name, "special", drive_requirement=drive_requirement,
-            drive_cost=drive_cost)
+            drive_cost=drive_cost, preview_area=preview_area)
         self.cooldown = cooldown
     def get_desc_header(self):
         if self.timer > 0:
@@ -460,7 +460,7 @@ class Special(Skill):
 class Kazan(Special):
     icon = res.unpack_sheet('slayer_skill_icon')[52]
     def __init__(self):
-        Special.__init__(self, "Kazan", cooldown=6)
+        Special.__init__(self, "Kazan", cooldown=6, preview_area=[(0,0), (1,0), (1,1), (1,-1), (2,0)])
     def get_desc_body(self):
         return ["Summons Kazan in front of you.",
                 "Allies within 1 tile of Kazan deal +12% damage.  "
@@ -472,7 +472,7 @@ class Kazan(Special):
 class Bremen(Special):
     icon = res.unpack_sheet('slayer_skill_icon')[84]
     def __init__(self):
-        Special.__init__(self, "Bremen", cooldown=6, drive_requirement=20)
+        Special.__init__(self, "Bremen", cooldown=6, drive_requirement=20, preview_area=[(0,0), (1,0), (1,1), (1,-1), (2,0)])
     def get_desc_body(self):
         return ["Summons Bremen in front of you.",
                 "Enemies within 1 tile of Bremen take +12% damage.  "
@@ -484,7 +484,7 @@ class Bremen(Special):
 class Unshackle(Special):
     icon = res.unpack_sheet('slayer_skill_icon')[80]
     def __init__(self):
-        Special.__init__(self, "Unshackle", cooldown=10)
+        Special.__init__(self, "Unshackle", cooldown=10, preview_area=[(1,0), (0,1), (0,-1), (-1,0)])
     def get_desc_body(self):
         return ["Unshackles adjacent friendly ghosts.  Unshackled ghosts have their "
                 "effects increased by 25%, their radii increased "

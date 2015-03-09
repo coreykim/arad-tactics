@@ -1,5 +1,4 @@
 Skill preview highlights
-Damage numbers
 Bring back bounding rect transparency
 Location-based effects
 Effects that expire when their source, whether it's a character or another location-based effect, no longer exists
