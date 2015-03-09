@@ -90,7 +90,6 @@ class Character(object):
             self.special.append(skill)
         if skill.type == "passive":
             self.passive.append(skill)
-            skill.on_learn()
     def gain_effect(self, EffectClass, duration, **extras):
         '''Takes effect classes'''
         effect = EffectClass(duration, extras)

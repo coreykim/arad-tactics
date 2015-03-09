@@ -40,6 +40,7 @@ class Battle(object):
                 avatar=avatar.ClayGolem(), basestat=character.ClayGolemStat())
         monster2.learn_skill(skill.Swing)
         monster2.learn_skill(skill.Thrust)
+        monster2.learn_skill(skill.Anger)
         monster1.enter_field(4, 1, self.field)
         monster2.enter_field(4, 2, self.field)
         self.select(monster1)
@@ -291,6 +292,9 @@ class EnemyPanel(ui.Frame):
             self.image.fill((20, 220, 20), rect=health_full)
             self.drive_empty = pygame.Rect(0, 28, 320-15-portrait.get_width(), 12)
             self.image.fill((80, 80, 80), rect=self.drive_empty)
+            drive_full = pygame.Rect(int((320-15-portrait.get_width())*(1-self.character.drive/self.character.max_drive)), 28,
+                                    int((320-15-portrait.get_width())*(self.character.drive/self.character.max_drive)), 12)
+            self.image.fill((220, 220, 20), rect=drive_full)
     def mousestay(self, caller):
         if self.character:
             pos = pygame.mouse.get_pos()

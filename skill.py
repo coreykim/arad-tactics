@@ -174,13 +174,12 @@ class Skill(object):
                 damage = sqrt(self.owner.power/target.power)*base_damage
                 #Adjust for combo
                 if not self.finisher:
-                    damage = damage*(1+0.2*self.active_index)/len(self.active_combo)
-                for effect in self.owner.effects:
+                    damage = damage*(1+0.4*self.active_index)/len(self.active_combo)
+                for effect in self.owner.effects+self.owner.passive:
                     damage, stagger = effect.outgoing_damage(damage, stagger, self, target)
-                for effect in target.effects:
+                for effect in target.effects+target.passive:
                     damage, stagger = effect.incoming_damage(damage, stagger, self)
                 target.take_damage(int(damage))
-                print "Did {} damage to {}.".format(damage, target.name)
                 target.stagger = stagger
                 if target.stagger >= target.resilience:
                     target.staggered = True
@@ -605,6 +604,19 @@ class E_AcidBurn(Effect):
         return (["Take 10 damage each turn. "])
     def tick(self):
         self.owner.take_damage(10)
+
+class Passive(Effect):
+    def __init__(self, name, id_name=None):
+        super(Passive, self).__init__(name, id_name=id_name)
+        self.type = 'passive'
+
+class Anger(Passive):
+    icon = None
+    def __init__(self):
+        super(Anger, self).__init__('Anger')
+    def incoming_damage(self, damage, stagger, attack):
+        self.owner.drive += 2
+        return damage, stagger
 
 class TileEffect(Skill):
     def __init__(self, name, x, y, source, duration=1, avatar=None, stacking=True):
