@@ -1,10 +1,8 @@
 AI
-Tooltips
-Show effects
+Skill preview highlights
 Bring back bounding rect transparency
 Location-based effects
 Effects that expire when their source, whether it's a character or another location-based effect, no longer exists
-
 
 Skill points:
 -No intermediate levels, just max.
@@ -39,22 +37,6 @@ Grabs are mutually exclusive due to grab guard.
 Slow attacks require combo linkers to be effective.
 Your starting character is hard to mess up but recruitables have more room to be made weak.
 As your character experiences personal growth, his/her max Drive goes up.
-
-Effects:
--DoT: every resolution phase
--Incoming and outgoing damage modifiers: every resolution phase
--Move reduction: every owner's action phase (3 turns)
-
-Inputs:
--field tiles
--turn indicator
--skill buttons
-
-Variables to track:
--Phase (1-4)
--Selected player
--Selected enemy
--The communal queue
 
 Highlights:
 -Movement - White

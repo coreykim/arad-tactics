@@ -1,0 +1,445 @@
+FORMAT
+Name
+Type (Special skills are instant, but typically have a cooldown.)
+Area (@ represents the character, x represents tiles covered, and . represents movement)
+Damage
+Startup (Affects turn order and what you can combo out of.  Lower startup is faster.)
+Stagger (Must be greater than or equal to the startup of the next attack in your combo, and can also interrupt enemies before they can attack.)
+Description
+# Auxiliary functions (notes to myself for coding purposes)
+
+Slayer starting skills: Swing, Thrust, Guard, Backstep, Kazan, Gore Cross, Triple Slash
+
+Soul
+Tier 1: Ghost Slash, Moonlight Slash, Shadow Whip
+Tier 2: Bremen, Saya, Rhasa
+Tier 3: Phantasmal Slayer, Unshackle, Tombstone
+Tier 4: Kalla, Keiga, Fear of Darkness
+Tier 5: Blache
+
+Berserker
+Tier 1: Mountainous Wheel, Bloodlust
+Tier 2: Frenzy, Diehard, Derange
+Tier 3: Outrage Break, Bloody Twister, Raging Fury
+Tier 4: Thirst, Bloody Cross, Blood Memory
+Tier 5: Extreme Overkill
+
+Blade Master:
+Tier 1: Backstep Cutter, Auto Guard, Flip Side Counter
+Tier 2: Rapid Weapon Switch, Flowing Stance, Blade Zenith
+Tier 3: Draw Sword, Raging Dragon Slash, Charge Crash
+Tier 4: Secret Slayer Technique, Illusion Sword Dance, Iron Strike
+Tier 5: Sword Storm
+
+Asura:
+Tier 1: Wave Wheel Slash, Spirit Crescent, Deadly Enticer
+Tier 2: Wave Manifestation Brand, Murderous Wave, Mind Snap
+Tier 3: Ghost Orb, Wave Radiation, Ground Quaker
+Tier 4: Ice Wave Sword, Fire Wave Sword, Agni Pentacle
+Tier 5: Wave Eye
+
+Ally recruit: Blood Sands
+Legendary weapon quest: King's Relic
+Awakening quest: Screaming Cave
+Final boss: Black Earth
+
+Fighter starting skills: Punch, Kick, Crouch, Backstep, Uppercut, Nen Shot, Sand Splash, Suplex
+
+Nen:
+Tier 1: Doppelganger, Nen Cannon
+Tier 2: Khai, Stimulating Breath, Nen Guard
+Tier 3: Tiger Flash, Spiral Nen, Lion's Roar
+Tier 4: Energy Shield, Raging Light Dragon, Nen Petals
+Tier 5: Nen Flower
+
+Striker:
+Tier 1: Crushing Fist, Hammer Kick, Tornado Kick
+Tier 2: Bone Crusher, Mountain Pusher, Tiger Chain Strike
+Tier 3: Power Fist, Muscle Shift, Super Armor, Stampede
+Tier 4: Rising Fist, One Inch Punch, Lightning Dance
+Tier 5: Universe Shattering Kick
+
+Grappler:
+Tier 1: Fling, Air Steiner, Neck Snap
+Tier 2: Tackle Grab, Intense Takedown, Back Breaker
+Tier 3: Shoulder Tackle, Elbow Shock, Unstoppable Grab
+Tier 4: Spiral, Cyclone Suplex, Wild Cannon Spike
+Tier 5: Gigantic Typhoon
+
+Brawler:
+Tier 1: Poison Needle, Explosive Hook, Needle Throw
+Tier 2: Hidden Stinger, Brick Buster, Disc Throw
+Tier 3: Taunt, Heaven's Net, Mount
+Tier 4: Ground Kick, Deadly Blood, Knuckle Duster
+Tier 5: Snake Kung Fu
+
+
+
+Swing
+Basic
+ x
+@xx
+ x
+10 damage
+10 startup
+12 stagger
+Generates 5 Drive upon hitting an enemy.
+slayer8
+
+Slash
+Basic
+@xxx
+15 damage
+10 startup
+14 stagger
+Generates 5 Drive upon hitting an enemy.
+slayer42
+
+Guard
+Basic
+1 startup
+Can only be used on the reaction phase.  Blocks 80% of incoming frontal damage for 2 turns.
+The Guard effect ends early if you attack or move.
+If the amount of damage absorbed by Guard exceeds twice your resilience, your Guard is broken and you take full damage from the hit that broke it.
+slayer24
+
+Backstep
+Basic
+5 startup
+Can only be used on the reaction phase.  Move backward 1 tile.  If successful, gain the Dodge effect.
+If an incoming frontal attack has more than 10 startup, you dodge it.  The startup threshold increases by 1 per dodged attack.
+The Dodge effect ends early if you attack.
+# Dodge(Effect)
+
+SOUL SKILLS
+
+Ghost Slash
+Soul
+@xxx
+22 damage
+8 startup
+18 stagger
+Knocks the enemy back 1 tile and ends your turn.
+slayer10
+
+Ghost Slash Drive
+Soul
+Passive
+Ghost Slash gains +2 damage for each ghost on the field, as well as extra effects depending on the ghosts.
+Kazan: You deal +10% damage for 4 turns
+Bremen: Affected enemy takes +10% damage for 4 turns
+Saya: Freezes the enemy
+Rhasa: Inflicts Rhasa's curse for 4 turns.
+# ghost_count()
+slayer22
+
+Moonlight Slash
+Soul
+ x
+@xx
+ x
+15/15/20 damage
+10/8/8 startup
+8/8/12 stagger
+Can be used two times consecutively.
+slayer160
+
+Full Moon
+Soul
+Passive
+Unlocks a third hit in Moonlight Slash, giving it more damage and combo potential.
+slayer174
+
+Ghost Step
+Soul
+Passive
+If you move and your start and end positions were both inside a ghost's area, you gain the Dodge effect.
+# character.lastpos
+slayer16
+
+Kazan
+Soul
+Special - 6 turn cooldown
+Summons Kazan at your location.
+Allies within 1 tile of Kazan deal +15% damage.
+Each turn, Kazan hits all enemies within 1 tile for 4 damage.
+Ghosts are intangible and do not take up space on the field.
+# add_tile_feature(), Ghost(TileFeature), KazanTile(Ghost), OutDamageMod(Effect)
+slayer52
+
+Unshackle
+Soul
+Special - 10 turn cooldown
+Increases the power of all ghosts currently on the field by 25% and increases their area by 1.
+slayer80
+
+Bremen
+Soul
+Special - 6 turn cooldown
+Requires 20 Drive
+Summons Bremen at your location.
+Enemies within 1 tile of Bremen take +15% damage.
+Each turn, Bremen hits all enemies within 1 tile for 4 damage.
+Ghosts are intangible and do not take up space on the field.
+# BremenTile(Ghost), InDamageMod(Effect)
+slayer84
+
+Saya
+Soul
+Special - 6 turn cooldown
+Requires 30 Drive, consumes 10 Drive.
+Summons Saya to your location for 4 turns.
+Each turn, Saya hits all enemies within 1 tile for 12 damage and freezes them on every other turn.
+Frozen enemies will have their actions delayed until they receive damage, at which point they become unfrozen.
+# SayaTile(Ghost), Freeze(Effect)
+slayer82
+
+Phantom Abduction
+Soul
+@xxxx
+12 damage
+14 startup
+10 stagger
+Drags enemies toward you by 1 tile.
+slayer332
+
+Tombstone
+Soul
+Requires 40 Drive, consumes 10 Drive
+ x x
+x @ x
+ x x
+20 damage
+18 startup
+10 stagger
+Drops 6 tombstones around you, damaging and cursing enemies, reducing their damage dealt by 10% and increasing their damage taken by 10% for 2 turns.
+Tombstones do 12 splash damage in radius 1.
+Additionally, if a tombstone lands on a ghost, the ghost's effect is doubled next turn.
+# Ghost.tombstone
+slayer90
+
+Rhasa
+Soul
+Special - 10 turn cooldown
+Requires 50 Drive, consumes 10 Drive
+Summons Rhasa to your location for 4 turns.
+Each turn, Rhasa marks all enemies within 1 tile.  If they do not move, next turn they receive Rhasa's curse for 4 turns.
+Rhasa's curse deals 4 damage per turn, reduces movement range by 1, reduces their speed by 15%, disables 1 of their skills, and increases their damage taken by 5%.
+Rhasa's curse can stack up to 3 times on the same enemy, and each stack refreshes the duration.
+Power multipliers on Rhasa (such as from Unshackle and Tombstone) increase the duration of the curse.
+# RhasaTile(Ghost), RhasaCurse(Effect)
+slayer170
+
+Phantasmal Slayer
+Soul
+Requires 50 Drive, consumes 15 Drive
+@xxxx.
+25 damage
+5 startup
+30 stagger
+Moves forward up to 5 tiles, passing through enemies and grabbing them.
+If you pass through a ghost, you draw on its power on the way, doing +5 additional damage per ghost and adding additional effects:
+Kazan: Deal an additional 10 damage.
+Bremen: Increase the duration of negative effects by 1 turn.
+Saya: Inflict an additional 30 stagger.
+Rhasa: Copy negative effects onto adjacent enemies.
+# grab(), copyeffects(positive, range)
+slayer138
+
+Kalla of Dark Flame
+Soul
+Requires 60 Drive, consumes 20 Drive
+ xx
+@xx
+ xx
+20 damage
+10 startup
+10 stagger
+Summons Kalla on initial use.
+For the next 10 turns, Kalla fires a range 5 Dark Flame projectile every time you use a basic attack.
+Dark Flames burn for 5 damage per turn for 3 turns and stack indefinitely, refreshing the duration.
+During Kalla's duration, you can use this skill again to execute the attack, ending Kalla.
+Enemies hit by the attack will have their Dark Flames explode for twice their damage in a radius 1 area.
+Ends your turn on initial use and when you trigger the attack.
+# KallaEffect(Effect), DarkFlame(Skill), DarkFlameBurn(Effect)
+slayer178
+
+Fear of Darkness
+Soul
+Passive
+Adjacent enemies receive +25% damage from ghosts.
+slayer196
+
+Ghost 6: Blache
+Soul
+Awakening
+Requires 100 Drive, consumes 100 Drive
+Covers entire stage.
+100 damage
+50 startup
+50 stagger
+Calls on the ultimate ghost, Blache.  All enemies lose one movement range this turn.  Next turn, Blache appears.
+Blache devours all of your ghosts.
+Blache does +50 damage for each ghost devoured.
+Blache does an extra 30% damage to the tile exactly 3 tiles in front of you at the time you summoned it.
+Afterward, your Basic Attacks generate 2 less Drive, your damage is halved, and you take double damage until the end of the battle.
+# CalledBlache(Effect), remove_tile_feature(), Exhausted(Effect)
+slayer188
+
+
+SOUL COMBOS
+
+Kazan > Bremen > Saya > Rhasa > Unshackle > move back 2 > Phantasmal Slayer > Tombstone
+Requires 55 Drive, consumes 35 Drive.  Target must be 1 or 2 tiles in front.
+Target is hit by every ghost, you get the maximum 3 Tombstone hits, every ghost gets Tombstone, and Phantasmal Slayer gets every ghost.
+You don't get the Kazan bonus, but this combo can be repeated and you do get the Kazan bonus the second time.
+On the second use, since Saya and Rhasa are already out, Drive consumption is lowered to 25.
+
+Swing > Moonlight Slash x3 > Slash > Ghost Slash
+Basic combo that builds 10 Drive.
+
+Phantom Abduction > Slash > Ghost Slash
+Build 5 Drive and get in solid damage at range 4.
+
+BERSERK SKILLS (in progress)
+
+Gore Cross
+Berserk
+  x
+x@xx
+  x
+10+10 damage
+12 startup
+10+10 stagger
+Slash twice, once in a horizontal line and once in a vertical line.  Hits twice at the intersection.
+Each slash causes minor bleeding to you and to struck enemies, doing 1 damage per turn for 3 turns.
+# Bleed(Effect)
+
+Mountainous Wheel
+Berserk
+@.xxx
+26 damage
+18 startup
+14 stagger
+Move forward and attack.  If used as an opener, you get 3 superarmor until the attack is executed.
+Superarmor reduces both incoming damage and stagger by a flat amount.
+Guard Breaker: Deals double damage against enemies with the Guard effect.
+# StartupSuperarmor(Effect), do_damage(guard_breaker=True)
+
+Vim and Vigor
+Berserk
+Passive
+Gore Cross and Mountainous Wheel get +2 damage per hit and build +2 Drive per hit.
+
+Frenzy
+Berserk
+Special - 2 cooldown
+You gain the Frenzy effect, which lasts until you use this skill again.
+You bleed for 8 damage each turn.
+Your basic attacks have a second hit that does 4 stagger and damage equal to your bleed damage.
+Frenzied basic attacks inflict a 1 damage bleed for 2 turns.
+Whenever you defeat an enemy with a Berserk skill, you gain 10 health.
+# Frenzy(Effect), on_kill()
+
+Diehard
+Berserk
+Passive
+Whenever your health dips below 20%, you regenerate 2% of your health each turn.
+As long as you stay below 20% health, you take 50% less damage.
+At the end of battle, you always regenerate up to 20%.
+# check_health(), character.regenerate
+
+Bloody Cross
+Berserk
+Passive
+For each percent of your health under 30%, you gain 1% damage and 1% speed.
+# Haste(Effect)
+
+Bloodlust
+Berserk
+  xx
+@xxx
+  xx
+14+10 damage
+8 startup
+8 stagger
+Grabs an enemy up to 2 tiles away and brings it in front of you.
+If it was bleeding, follow up with a blast of blood, and you gain +10% damage for 2 turns.
+
+Derange
+Berserk
+Special - 1 cooldown
+Requires 20 Drive
+You take 20% extra damage, but deal 30% extra damage and gain 1 movement range.  Use this skill again to end the effect.
+
+Raging Fury
+Berserk
+  x
+ xxx
+xx@xx
+ xxx
+  x
+Requires 40 Drive, consumes 10 Drive.
+5*8 damage
+8 startup
+15 stagger
+Hits all enemies around you.  Adjacent enemies are hit 8 times, while the rest are hit 4 times.
+Each hit deals +1 damage against enemies that are bleeding for at least 5 damage.
+
+Thirst
+Berserk
+Special - 6 cooldown
+For 4 turns, the amount of bleed you inflict on enemies is doubled.
+
+Bloody Twister
+Berserk
+ xxxx
+@xxxx
+ xxxx
+25 damage
+14 startup
+10 stagger
+Grabs all enemies in the area, pulls them in towards the Slayer, then follows up with a powerful swing that inflicts 2 bleed per turn for 3 turns.
+The damage of the swing is increased by 3 for each enemy pulled beyond the first, with elites counting as 3 and bosses counting as 6.
+
+Blood Sword
+Berserk
+@.xxx
+35 damage
+20 startup
+20 stagger
+Moves forward then stabs with a bloody sword.
+
+Outrage Break
+Berserk
+    xxx
+@  x.xxx
+    xxx
+Leap forward, passing through enemies and slamming your sword down on the ground.  Similar to Mountainous Wheel.
+
+Neutral Wave
+Wave
+@xxxx
+14 damage
+12 startup
+8 stagger
+
+Wave Wheel
+Wave
+  x
+@xxx
+  x
+15 damage
+12 startup
+30+5 stagger
+Grabs a random enemy in the wave wheel, moving it two tiles in front of you if possible.
+Deals radius 1 splash damage at that spot, and ends your turn.
+Enemies hit by grabs lose the Guard status and any defensive passive effects cannot trigger this turn.
+
+Triple Slash
+Sword
+@.xx
+10/10/12 damage
+12/8/8 startup
+8/8/10 stagger
+Dash forward one tile, then attack. Can be used three times consecutively.  On the third use, it knocks back by 1 tile.

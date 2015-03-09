@@ -1,0 +1,30 @@
+FORMAT
+Name
+Type (Special skills are instant, but typically have a cooldown.)
+Area (@ represents the character, x represents tiles covered, and . represents movement)
+Damage
+Startup (Affects turn order and what you can combo out of.  Lower startup is faster.)
+Stagger (Must be greater than or equal to the startup of the next attack in your combo, and can also interrupt enemies before they can attack.)
+Description
+# Auxiliary functions (notes to myself for coding purposes)
+
+Swing
+
+Pluto
+Range 4 area
+At range 3 and under, the target is hit twice.
+
+Lantern Jack
+Range 5 projectile
+Explodes on impact and deals radius 1 splash damage
+
+Frosty
+
+
+Delayed by one turn is a sensible mechanic that forces the target to move into a certain location, if they can't just avoid it with Guard or Backstep.  Guard and Backstep need some limits so you can't just use it for everything.
+
+A charged attack is just a very slow, interruptible attack.
+
+
+Guard should consume Drive, and go back to blocking up to a certain amount.  That amount is cumulative, and regenerates over time.
+Backstep loses its Dodge component?  Move back distance increased to 2?

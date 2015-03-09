@@ -6,7 +6,7 @@ import avatar
 import character
 import title
 import stage
-from skill import Skill
+import skill
 
 class Battle(object):
     def __init__(self, main):
@@ -17,18 +17,16 @@ class Battle(object):
         self.event = None
         self.turn_count = 0
         self.queue = []
-        self.turn = True #True for player, False for enemy
-        self.phase = 0
         self.skillbuttons = []
         self.tooltip = None
+        self.field = Field(self, 0, 41,
+                            10, 5, stage.Sewer)
         self.turn_indicator = TurnIndicator(self)
         self.player_panel = PlayerPanel(self)
         self.enemy_panel = EnemyPanel(self)
         self.player_effects = []
         self.enemy_effects = []
         self.select(self.main.data[0])
-        self.field = Field(self, 0, self.turn_indicator.rect.height,
-                            10, 5, stage.Sewer)
         self.message = ui.TextBox(0, self.turn_indicator.rect.height+self.field.rect.height,
                         640, 480-self.turn_indicator.rect.height-self.field.rect.height, [' '])
         self.ui.add(self.player_panel, self.enemy_panel, self.turn_indicator,
@@ -36,8 +34,12 @@ class Battle(object):
         self.main.data[0].enter_field(0, 0, self.field)
         monster1 = character.Character('Lugaru',
                 avatar=avatar.Lugaru(), basestat=character.LugaruStat())
+        monster1.learn_skill(skill.Swing)
+        monster1.learn_skill(skill.Thrust)
         monster2 = character.Character('Clay Golem',
                 avatar=avatar.ClayGolem(), basestat=character.ClayGolemStat())
+        monster2.learn_skill(skill.Swing)
+        monster2.learn_skill(skill.Thrust)
         monster1.enter_field(4, 1, self.field)
         monster2.enter_field(4, 2, self.field)
         self.select(monster1)
@@ -52,6 +54,18 @@ class Battle(object):
             self.enemy_panel.character = character
             self.enemy_panel.render()
         self.make_effect_icons(character)
+    def pass_select(self):
+        character = self.player_panel.character
+        if character.player:
+            index = self.field.players.index(character)
+            for i in range(len(self.field.players)):
+                index += 1
+                if index > len(self.field.players)-1:
+                    index = 0
+                if not self.field.players[index].done:
+                    self.select(self.field.players[index])
+                    return
+            self.next_phase()
     def make_skill_buttons(self, character):
         for button in self.skillbuttons:
             button.kill()
@@ -78,27 +92,30 @@ class Battle(object):
                 self.ui.add(icon)
                 self.enemy_effects.append(icon)
     def next_phase(self):
-        self.phase += 1
+        self.field.phase += 1
         self.field.move_highlights = []
-        if self.phase == 1:
-            self.turn = not self.turn
-            if self.turn and len(self.field.players)>0:
+        if self.field.phase == 1:
+            self.field.turn = not self.field.turn
+            if self.field.turn and len(self.field.players)>0:
                 self.select(self.field.players[0])
-        elif self.phase == 2:
+            self.run_ai()
+        elif self.field.phase == 2:
             for character in self.field.characters:
                 if len(character.queue)>0:
-                    Skill.queue.append(character.queue)
+                    skill.Skill.queue.append(character.queue)
                     #Funnel the combos into one list so we can sort them
                 character.queue = []
             for button in self.skillbuttons:
                 button.kill()
             self.skillbuttons = []
             self.ui.add(self.message)
-        elif self.phase == 3:
+        elif self.field.phase == 3:
+            self.turn_count += 1
+            self.field.phase = 0
             #Tick down
             for character in self.field.characters:
                 character.every_turn()
-                if character.player == self.turn:
+                if character.player == self.field.turn:
                     character.every_own_turn()
             for tile in self.field.tiles:
                 expired_effects = []
@@ -111,50 +128,50 @@ class Battle(object):
                 for effect in tile.effects:
                     if effect in expired_effects:
                         tile.effects.remove(effect)
-            self.turn_count += 1
-            self.phase = 0
-            Skill.queue = []
-            Skill.active_action = None
-            Skill.active_combo = []
-            if self.turn and len(self.field.players)>0:
+            skill.Skill.queue = []
+            skill.Skill.active_action = None
+            skill.Skill.active_combo = []
+            self.ui.remove(self.message)
+            if self.field.turn and len(self.field.players)>0:
                 self.select(self.field.players[0])
+            self.run_ai()
         self.turn_indicator.render()
     def resolve(self):
         self.message.text = []
-        if Skill.active_action:
-            Skill.active_action.affected_area = []
-        if Skill.active_index==len(Skill.active_combo):
+        if skill.Skill.active_action:
+            skill.Skill.active_action.affected_area = []
+        if skill.Skill.active_index==len(skill.Skill.active_combo):
             #End of combo
             for character in self.field.characters:
                 character.stagger = 0
-            Skill.active_index = 0
-            if len(Skill.queue)>0:
+            skill.Skill.active_index = 0
+            if len(skill.Skill.queue)>0:
                 def compare_speed(combo):
                     opener = combo[0]
                     startup = opener.startup / opener.owner.speed
-                    if opener.owner.player == self.turn and opener.type == "attack":
+                    if opener.owner.player == self.field.turn and opener.type == "attack":
                         startup = startup*2
                     return startup
-                Skill.queue.sort(key=compare_speed)
-                Skill.active_combo = Skill.queue.pop(0)
+                skill.Skill.queue.sort(key=compare_speed)
+                skill.Skill.active_combo = skill.Skill.queue.pop(0)
             else:
                 self.next_phase()
-        if len(Skill.active_combo) > 0:
-            Skill.active_action = Skill.active_combo[Skill.active_index]
-            if Skill.active_action.owner.staggered:
-                self.message.text.append("{} is staggered!".format(Skill.active_action.owner.name))
-                Skill.active_index = len(Skill.active_combo)
+        if len(skill.Skill.active_combo) > 0:
+            skill.Skill.active_action = skill.Skill.active_combo[skill.Skill.active_index]
+            if skill.Skill.active_action.owner.staggered:
+                self.message.text.append("{} is staggered!".format(skill.Skill.active_action.owner.name))
+                skill.Skill.active_index = len(skill.Skill.active_combo)
             else:
-                if Skill.active_index == 0:
-                    self.message.text.append("{} uses {}!".format(Skill.active_action.owner.name,
-                        Skill.active_action.name))
+                if skill.Skill.active_index == 0:
+                    self.message.text.append("{} uses {}!".format(skill.Skill.active_action.owner.name,
+                        skill.Skill.active_action.name))
                 else:
-                    self.message.text.append("{} combos into {}!".format(Skill.active_action.owner.name,
-                        Skill.active_action.name))
-                Skill.active_action.do()
-                if Skill.active_action not in Skill.active_combo:
-                    Skill.active_action.surprise_stagger = 0
-                Skill.active_index += 1
+                    self.message.text.append("{} combos into {}!".format(skill.Skill.active_action.owner.name,
+                        skill.Skill.active_action.name))
+                skill.Skill.active_action.do()
+                if skill.Skill.active_action not in skill.Skill.active_combo:
+                    skill.Skill.active_action.surprise_stagger = 0
+                skill.Skill.active_index += 1
         self.player_panel.render()
         self.enemy_panel.render()
         self.message.render()
@@ -174,13 +191,37 @@ class Battle(object):
             else:
                 y_blit += 15
             self.main.canvas.blit(self.tooltip, (x_blit, y_blit))
+    def run_ai(self):
+        acting_ai = []
+        for character in self.field.characters:
+            if character.ai and character.player==self.field.turn and not character.done:
+                acting_ai.append(character)
+                character.ai.build_priority_list()
+        def compare_character_priority(character):
+            if len(character.ai.priority_list)>0:
+                return character.ai.priority_list[0][0]
+            else:
+                return 0
+        acting_ai.sort(key=compare_character_priority, reverse=True)
+        #Second pass
+        for character in acting_ai:
+            if self.field.phase == 0:
+                character.ai.build_priority_list() #Update list every time
+            if len(character.ai.priority_list)>0:
+                dest_x, dest_y = character.ai.priority_list[0][3], character.ai.priority_list[0][4]
+                character.move(dest_x, dest_y)
+                character.ai.priority_list[0][1].add_to_queue()
+                character.direction = character.ai.priority_list[0][2]
+                character.done = True #AI does not use combos yet
+            else:
+                character.ai.noncombat_act() #Custom function for when nothing is in range
+        if not self.field.turn:
+            self.next_phase()
     def run(self):
         self.draw()
         if self.event:
-            if self.phase==2:
+            if self.field.phase==2:
                 self.resolve()
-            elif not self.turn:
-                self.next_phase()
             self.event = None
 
 
@@ -204,6 +245,9 @@ class PlayerPanel(ui.Frame):
             self.image.fill((20, 220, 20), rect=health_full)
             self.drive_empty = pygame.Rect(27, 28, 320-16-27, 12)
             self.image.fill((80, 80, 80), rect=self.drive_empty)
+            drive_full = pygame.Rect(27, 28, int((320-16-27)*
+                            self.character.drive/self.character.max_drive), 12)
+            self.image.fill((220, 220, 20), rect=drive_full)
     def mousestay(self, caller):
         if self.character:
             pos = pygame.mouse.get_pos()
@@ -267,26 +311,26 @@ class TurnIndicator(ui.Frame):
                                     flags=pygame.SRCALPHA)
         if self.active:
             self.image.fill(self.highlightcolor)
-        if self.caller.turn and self.caller.phase == 0:
+        if self.caller.field.turn and self.caller.field.phase == 0:
             index = 0
-        elif not self.caller.turn and self.caller.phase in [1, 2]:
+        elif not self.caller.field.turn and self.caller.field.phase in [1, 2]:
             index = 1
-        elif not self.caller.turn and self.caller.phase == 0:
+        elif not self.caller.field.turn and self.caller.field.phase == 0:
             index = 2
         else:
             index = 3
         self.image.blit(self.frame[index], (0, 0))
     def mousebuttondown(self, caller, event):
-        if event.button==1 and self.caller.phase!=2 and self.caller.turn:
+        if event.button==1 and self.caller.field.phase!=2 and self.caller.field.turn:
             self.caller.next_phase()
     def mousestay(self, caller):
-        if caller.phase == 0 and caller.turn:
+        if caller.field.phase == 0 and caller.field.turn:
             text = ['Player Action Phase']
-        elif caller.phase == 1 and not caller.turn:
+        elif caller.field.phase == 1 and not caller.field.turn:
             text = ['Enemy Reaction Phase']
-        elif caller.phase == 0 and not caller.turn:
+        elif caller.field.phase == 0 and not caller.field.turn:
             text = ['Enemy Action Phase']
-        elif caller.phase == 1 and caller.turn:
+        elif caller.field.phase == 1 and caller.field.turn:
             text = ['Player Reaction Phase']
         else:
             text = ['Resolution Phase']
@@ -334,6 +378,8 @@ class Field(ui.Frame):
         self.characters = []
         self.players = []
         self.enemies = []
+        self.turn = True #True for player, False for enemy
+        self.phase = 0
     def mousebuttondown(self, caller, event):
         if event.button==1:
             self.held = True
@@ -344,7 +390,7 @@ class Field(ui.Frame):
     def mousebuttonup(self, caller, event):
         if event.button==1:
             self.held = False
-            if not self.moved and not self.caller.phase==2:
+            if not self.moved and not self.phase==2:
                 pos = event.pos
                 pos = (pos[0]*640/pygame.display.get_surface().get_width()*
                         self.camera.width/self.rect.width+self.camera.left,
@@ -355,14 +401,14 @@ class Field(ui.Frame):
                 tile_x = (pos[0]-pos[1]*self.grid_tilt/self.grid_height)/self.grid_width
                 if 0<=tile_x<self.columns and 0<=tile_y<self.rows:
                     tile_x, tile_y = int(tile_x), int(tile_y)
-                    if not self.is_blocked_at(tile_x, tile_y) and self.caller.phase==0 and self.caller.turn:
+                    if not self.is_blocked_at(tile_x, tile_y) and self.phase==0 and self.turn:
                         if len(self.move_highlights)>0:
                             self.caller.player.move(tile_x, tile_y)
                             self.move_highlights = []
                         else:
                             self.move_highlights += self.caller.player.movement_area()
                     elif ((tile_x, tile_y) == (self.caller.player.x, self.caller.player.y)
-                                            and self.caller.phase==0):
+                                            and self.phase==0):
                         self.caller.player.direction = -self.caller.player.direction
                         self.caller.select(self.caller.player)
                     elif len(self.tile[tile_x][tile_y].occupant)>0:
@@ -433,8 +479,8 @@ class Field(ui.Frame):
         self.stage.static.blit(overlay, (0,0))
         self.stage.static_floor.blit(overlay, (0,0))
     def render_occupants(self):
-        for column in range(self.columns):
-            for row in range(self.rows):
+        for row in range(self.rows):
+            for column in range(self.columns):
                 for thing in (self.tile[column][row].occupant + 
                                 self.tile[column][row].effects):
                     x_blit = ((column+0.5)*self.grid_width+
@@ -485,6 +531,11 @@ class Field(ui.Frame):
                 if effect.block:
                     return True
         return False
+    def occupant_at(self, x, y):
+        if x not in range(self.columns) or y not in range(self.rows):
+            return []
+        else:
+            return self.tile[x][y].occupant
 
 class SkillButton(ui.Frame):
     def __init__(self, i, skill):
@@ -509,6 +560,7 @@ class SkillButton(ui.Frame):
             button.render()
         caller.make_effect_icons(caller.player)
         caller.make_effect_icons(caller.enemy)
+        caller.pass_select()
     def mousestay(self, caller):
         caller.tooltip = res.string2image(self.skill.get_desc_header()+self.skill.get_desc_body())
 

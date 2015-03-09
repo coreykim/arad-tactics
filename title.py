@@ -10,7 +10,7 @@ import skill
 class Title(object):
     def __init__(self, main):
         self.main = main
-        self.ui = pygame.sprite.Group()
+        self.ui = pygame.sprite.LayeredUpdates()
         self.selection = 'root'
         res.play_music('characterSelectStage.ogg')
         self.splash = ui.Image(0, 0, res.load_image('illust'+str(random.randrange(5))+'.png'))

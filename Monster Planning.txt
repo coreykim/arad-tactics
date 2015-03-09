@@ -1,0 +1,79 @@
+Guard should consume Drive, and go back to blocking up to a certain amount.  That amount is cumulative, and regenerates over time.
+Backstep is free and avoids one melee/projectile hit.  Can avoid 3 total attacks per battle.
+
+Keep the AI same as before, except make priority a property of the AI instead of a property of the skill.
+calculate priority
+build priority list
+execute team plan based on priority list
+
+Targeting types:
+"Melee": Bash, Smash, Charge, Bite, Slash
+Projectile: Rock Throw, Flame
+Area: Earthquake, Thunder
+
+Dodge can dodge Melee and Projectile, but not Area type attacks.  If I want to make an attack undodgeable, just call it "Area".
+
+Skill tags: melee, projectile, area, usable, requires drive, consumes drive, stationary, finisher, single (can't be used in a combo)
+
+
+Goblin
+Bash: Hits directly in front and does damage
+
+Goblin Slinger
+Rock Throw: Fires a range 3 projectile that does damage
+Triple Throw: Fires 3 range 3 projectiles.  Stationary.
+
+Goblin Kamikaze
+Self-Destruct: Explodes for a large amount of damage in radius 2.
+
+Goblin Shaman
+Bash: Hits directly in front and does damage.
+Thunder: Calls lightning bolts in a certain pattern after 1 turn.
+Flame: A range 4 projectile that explodes in radius 1.
+Gale: Inflicts knockback in a wide area.
+
+Tau
+Smash: Hits in a large area in front
+
+Tau Charger
+Smash: Hits a large area in front
+Charge: Rushes 3 tiles, pushing as it goes.
+
+Tau Guard
+Smash: Hits a large area in front
+Guard: Defend against damage from the front.  Used whenever Drive is high enough.
+
+Shauta, the Tau Chieftain
+Smash
+Guard
+Charge
+Earthquake: Three hits, each in an expanding radius going from 1 to 3.  Requires and consumes Drive.
+
+Zombie
+Has 2 movement instead of 3
+Bite: A grab that hits directly in front and inflicts bleed.
+Blood Scent: Each action phase, see if there's an enemy bleeding in range 5.  If so, gain the berserk effect for 2 turns.  Movement increased from 2 to 4, and damage against bleeding enemies increased by 50%.
+
+Ghoul
+Slash: Hits 2 tiles in front.
+Relentless: Special.  Doubles resilience for 1 turn.  3 turn cooldown.
+
+Ghoulguish
+Bite: A grab that hits directly in front, inflicting bleed and slow.
+Cold As A Corpse: Passive.  Each turn, apply a cold curse in radius 3 that lasts for 1 turn and stacks up to 3 times.  On the 3rd stack, the target is frozen for 2 turns.
+Frozen Footsteps: Requires Drive.  Each tile stood on by Ghoulguish will deal damage and slow any enemy who stands on it.  The cold tile is a terrain effect, and will remain indefinitely unless replaced by another terrain effect.
+
+Lugaru
+Pounce: Teleport forward 2 tiles and attack.  Fast.
+Bite: Hits directly in front and inflicts bleed.
+
+White Lugaru
+Pounce: Teleport forward 2 tiles and attack.  Fast.
+Bite: A grab that hits directly in front and inflicts bleed.
+Restore: Heals the ally with the lowest health.  Requires 2 turns of channeling.
+
+Penril
+Pounce: Teleport forward 2 tiles and attack.  Fast.
+Double Swipe: Hits in Slash area twice.  High stagger.
+Sidestep: Move randomly either up or down.
+Poison Fume: Poisons all enemies within range 2.  Requires a small amount of Drive.  Poison does damage over time and lowers your resilience.

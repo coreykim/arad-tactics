@@ -5,40 +5,21 @@ import math
 from resources import res
 import skill
 
-class BaseStat(object):
-    def __init__(self, hp=500, resilience=50, power=50, speed=50):
-        self.hp = hp
-        self.resilience = resilience
-        self.power = power
-        self.speed = speed
-        self.drive = 100
-        self.movement = 3
-class SlayerStat(BaseStat):
-    def __init__(self):
-        BaseStat.__init__(self, hp=1000, resilience=50, power=60, speed=50)
-class FighterStat(BaseStat):
-    def __init__(self):
-        BaseStat.__init__(self, hp=1000, resilience=55, power=50, speed=60)
-class LugaruStat(BaseStat):
-    def __init__(self):
-        BaseStat.__init__(self, hp=400, resilience=30, power=30, speed=60)
-class ClayGolemStat(BaseStat):
-    def __init__(self):
-        BaseStat.__init__(self, hp=900, resilience=70, power=55, speed=30)
-
 class Character(object):
-    def __init__(self, name, job="monster", avatar=None, basestat=None, player=False, ai=None):
+    def __init__(self, name, job="monster", avatar=None, basestat=None, player=False):
         self.name = name
         self.job = job
+        if self.job=="monster":
+            self.ai = BasicMonster()
+            self.ai.owner = self
+        else:
+            self.ai = None
         self.avatar = avatar
         if self.avatar:
             self.avatar.owner = self
         self.basestat = basestat
         self.load_stats()
         self.player = player
-        self.ai = ai
-        if self.ai:
-            self.ai.owner = self
         self.direction = None
         self.x = self.y = None
         self.field = None
@@ -221,3 +202,89 @@ class Character(object):
             self.moved=True
         else:
             print "Can't move there."
+
+class BasicMonster(object):
+    '''The basic AI class'''
+    def __init__(self):
+        self.priority_list = []
+    def calculate_priority(self, skill, pos=None):
+        '''Find the number of valid targets to calculate priority of attack, for AI purposes.'''
+        '''Optional arguments allow calculations for positions that we're not actually at.'''
+        if pos:
+            origin_x, origin_y = pos[0], pos[1]
+        else:
+            origin_x, origin_y = self.owner.x, self.owner.y
+        if self.owner.field.phase == 1:
+            directions = [self.owner.direction]
+        else:
+            directions = [1, -1]
+        targets = [0, 0]
+        for i, direction in enumerate(directions):
+            for tile in skill.preview_area:
+                x, y = origin_x+tile[0]*direction, origin_y+tile[1]
+                for occupant in self.owner.field.occupant_at(x, y):
+                    if occupant.player != self.owner.player:
+                        targets[i] += 1.0
+                        if (x - origin_x)*occupant.direction > 0: #if this is a back attack
+                            targets[i] += 0.5
+        if self.owner.field.phase == 1:
+            return targets[0], self.owner.direction
+        else:
+            #Compare forward versus backward aiming priority
+            if targets[0] >= targets[1]:
+                return targets[0], 1
+            else:
+                return targets[1], -1
+    def build_priority_list(self):
+        self.priority_list = []
+        #Check stationary attacks
+        highest_priority, highest_priority_attack, direction = 0, None, -1
+        for attack in self.owner.attack:
+            if attack.pre_use():
+                present_priority, present_direction = self.calculate_priority(attack)
+                if present_priority > highest_priority:
+                    highest_priority, highest_priority_attack, direction = present_priority, attack, present_direction
+        if highest_priority > 0:
+            self.priority_list.append((highest_priority, highest_priority_attack, direction, self.owner.x, self.owner.y))
+        #Check post-move attacks
+        if self.owner.field.phase==0:
+            for tile in self.owner.movement_area():
+                highest_priority, highest_priority_attack, direction = 0, None, -1
+                for attack in self.owner.attack:
+                    if attack.pre_use():
+                        present_priority, present_direction = self.calculate_priority(attack, pos=tile)
+                        #Attacks that aren't postmove get a large priority penalty
+                        if attack.stationary:
+                            present_priority = present_priority/4
+                        if present_priority > highest_priority:
+                            highest_priority, highest_priority_attack, direction = present_priority, attack, present_direction
+                            highest_x, highest_y = tile
+                if highest_priority > 0:
+                    self.priority_list.append((highest_priority, highest_priority_attack, direction, tile[0], tile[1]))
+        if len(self.priority_list)>0:
+            def compare_priority(priority):
+                return priority[0]
+            self.priority_list.sort(key=compare_priority, reverse=True)
+    def noncombat_act(self):
+        self.owner.done = True
+
+class BaseStat(object):
+    def __init__(self, hp=500, resilience=50, power=50, speed=50):
+        self.hp = hp
+        self.resilience = resilience
+        self.power = power
+        self.speed = speed
+        self.drive = 100
+        self.movement = 3
+class SlayerStat(BaseStat):
+    def __init__(self):
+        BaseStat.__init__(self, hp=1000, resilience=50, power=60, speed=50)
+class FighterStat(BaseStat):
+    def __init__(self):
+        BaseStat.__init__(self, hp=1000, resilience=55, power=50, speed=60)
+class LugaruStat(BaseStat):
+    def __init__(self):
+        BaseStat.__init__(self, hp=400, resilience=30, power=30, speed=60)
+class ClayGolemStat(BaseStat):
+    def __init__(self):
+        BaseStat.__init__(self, hp=900, resilience=70, power=55, speed=30)

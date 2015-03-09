@@ -10,7 +10,7 @@ class Skill(object):
     active_action = None
     active_index = 0
     def __init__(self, name, type, startup=50, damage=[], stagger=[],
-                preview_area=[], ai_priority = 10, postmove=True,
+                preview_area=[], ai_priority = 10, stationary=False,
                 finisher=False, drive_requirement=0, drive_cost=0):
         self.name = name
         self.type = type
@@ -25,7 +25,7 @@ class Skill(object):
         self.miss_sound = res.load_sound("miss.wav")
         self.owner = None
         self.ai_priority = ai_priority
-        self.postmove = postmove
+        self.stationary = stationary
         self.finisher = finisher
         self.used = 0
         self.usable = 1
@@ -53,7 +53,9 @@ class Skill(object):
         return []
     def pre_use(self):
         '''Check if this skill is currently usable by its owner'''
-        if self.owner.moved and not self.postmove:
+        if self.owner.done:
+            return False
+        if self.owner.moved and self.stationary:
             return False
         if self.used >= self.usable:
             return False
@@ -62,6 +64,8 @@ class Skill(object):
                 return False
             if self.used > 0 and self.owner.queue[-1] is not self:
                 return False
+        if self.used > 0 and len(self.owner.queue)==0:
+            return False
         if self.owner.drive < self.drive_requirement:
             return False
         if self.timer > 0:
@@ -119,6 +123,13 @@ class Skill(object):
         else:
             return targets
     #Targeting functions
+    def tiles_in_radius(self, center_x, center_y, radius):
+        tiles = []
+        for x in range(self.field.columns):
+            for y in range(self.field.rows):
+                if abs(x-center_x)+abs(y-center_y)<=radius:
+                    tiles.append((x, y))
+        return tiles
     def target_area(self, tiles, friendlies=False, enemies=True):
         targets = []
         for tile in tiles:
@@ -244,7 +255,7 @@ class Skill(object):
 class Swing(Skill):
     icon = res.unpack_sheet('slayer_skill_icon')[8]
     def __init__(self):
-        Skill.__init__(self, "Swing", "attack", startup=10, damage=[100],
+        Skill.__init__(self, "Swing", "attack", startup=10, damage=[50],
                         stagger=[12], preview_area=[(1,-1),(1,0),(2,0),(1,1)])
     def get_desc_body(self):
         return ["Generate 5 Drive if you make contact with an enemy."]
@@ -256,7 +267,7 @@ class Swing(Skill):
 class Thrust(Skill):
     icon = res.unpack_sheet('slayer_skill_icon')[42]
     def __init__(self):
-        Skill.__init__(self, "Thrust", "attack", startup=12, damage=[120],
+        Skill.__init__(self, "Thrust", "attack", startup=12, damage=[60],
                         stagger=[14], preview_area=[(1,0),(2,0),(3,0)])
     def get_desc_body(self):
         return ["Generate 5 Drive if you make contact with an enemy."]
@@ -268,7 +279,7 @@ class Thrust(Skill):
 class GhostSlash(Skill):
     icon = res.unpack_sheet('slayer_skill_icon')[10]
     def __init__(self):
-        Skill.__init__(self, "Ghost Slash", "attack", startup=8, damage=[200],
+        Skill.__init__(self, "Ghost Slash", "attack", startup=8, damage=[100],
                         stagger=[18], preview_area=[(1,0),(2,0),(3,0)],
                         finisher=True)
     def get_desc_body(self):
@@ -283,7 +294,7 @@ class MoonlightSlash(Skill):
     icon = res.unpack_sheet('slayer_skill_icon')[160]
     def __init__(self):
         Skill.__init__(self, "Moonlight Slash", "attack", startup=13,
-                        damage=[140, 140, 240], stagger=[13, 16, 8],
+                        damage=[70, 70, 120], stagger=[13, 16, 8],
                         preview_area=[(1,-1),(1,0),(2,0),(1,1)])
         self.usable = 3
         self.consecutive_hits = 0
@@ -352,7 +363,7 @@ class HurricaneRush(Skill):
 class PowerWave(Skill):
     def __init__(self):
         Skill.__init__(self, "Power Wave", "attack", startup=15, preview_area=[(1,0),(2,0),(2,-1),(2,1)],
-            postmove=False)
+            stationary=False)
         self.desc = (["Damage: 25", "Startup: 15", "Stagger: 15",
                     "A slow attack that covers a lot of area.  "
                     "Knocks back by 1 tile against staggered enemies.  Can't be used after moving."])
@@ -366,7 +377,7 @@ class PowerGeyser(Skill):
     def __init__(self):
         Skill.__init__(self, "Power Geyser", "attack", startup=20,
             preview_area=[(1,0),(2,0),(2,-1),(2,1),(3,-2),(3,-1),(3,0),(3,1),(3,2),(4,-1),(4,0),(4,1)],
-            postmove=False, finisher=True)
+            stationary=False, finisher=True)
         self.desc = (["Damage: 50", "Startup: 20", "Stagger: 20",
                     "A slow attack that covers a massive area.  "
                     "Knocks back by 2 tiles against staggered enemies.  Can't be used after moving.  "
@@ -620,13 +631,6 @@ class TileEffect(Skill):
         self.field.tile[x][y].effects.append(self)
         self.block = False
         self.ghost = False
-    def tiles_in_radius(self, center_x, center_y, radius):
-        tiles = []
-        for x in range(self.field.columns):
-            for y in range(self.field.rows):
-                if abs(x-center_x)+abs(y-center_y)<=radius:
-                    tiles.append((x, y))
-        return tiles
     def target_area(self, tiles, friendly=True):
         targets = []
         for tile in tiles:
@@ -643,7 +647,7 @@ class T_Kazan(TileEffect):
         TileEffect.__init__(self, "Kazan", x, y, creator, duration=duration, avatar=avatar.Kazan(), stacking=False)
         self.player = creator.player
         self.strength = strength
-        self.damage = 40
+        self.damage = 20
         self.radius = 1
         self.ghost = True
         self.do()
@@ -659,7 +663,7 @@ class T_Bremen(TileEffect):
         TileEffect.__init__(self, "Bremen", x, y, creator, duration=duration, avatar=avatar.Bremen(), stacking=False)
         self.player = creator.player
         self.strength = strength
-        self.damage = 40
+        self.damage = 20
         self.radius = 1
         self.ghost = True
         self.do()
